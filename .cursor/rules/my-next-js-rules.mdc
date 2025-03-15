@@ -1,0 +1,226 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+### Technology Stack & Tools
+
+#### Package Manager: Use npm
+
+- **All package installations and management must be done using npm.**
+
+#### Next.js Routing: Use App Router
+
+- **Use the App Router instead of the Pages Router for project routing.**
+
+#### TypeScript: Recommended Usage
+
+- **Use TypeScript throughout the project.**
+    
+- **Ensure type safety by applying TypeScript to all components and server logic.**
+    
+- **Prefix interface names with 'I'.**  
+    Example:
+    
+    ```typescript
+    export interface IComment {
+        id: string;
+        text: string;
+        author: string;
+    }
+    ```
+    
+
+#### ORM: Use Drizzle
+
+- **Use Drizzle ORM for all database operations.**
+- **Define database models and implement CRUD operations using Drizzle.**
+
+#### Component Creation: Prioritize ShadCN
+
+- **All UI components should be created using ShadCN.**
+
+---
+
+### Code Guidelines
+
+#### Next.js Development: Prefer Route Handlers
+
+- **All API endpoints must be implemented using Route Handlers.**
+- **Use Route Handlers for complex server-side operations such as database transactions, external API calls, and authentication.**
+- **Use Server Actions only for simple form submissions or minimal data processing.**
+
+#### Code Style: ESLint & Prettier Configuration
+
+- **Use ESLint and Prettier to maintain a consistent code style.**
+- **Apply auto-formatting with lint-staged before committing code.**
+- **Use 2-space indentation.**
+
+#### Naming Conventions
+
+- **Interfaces:** Prefix with 'I' (e.g., `IUser`)
+- **Types:** Prefix with 'T' (e.g., `TUserProps`)
+- **Components:** Use PascalCase (e.g., `UserProfile`)
+- **Functions & Variables:** Use camelCase (e.g., `getUserData`)
+- **Constants:** Use uppercase with underscores (e.g., `API_BASE_URL`)
+
+#### State Management Strategy
+
+- **Use React's useState and useReducer for local state within pages/components.**
+- **Use React Context for shared state across the component tree.**
+- **For complex global state management, use Zustand.**
+
+#### API Response Structure: Maintain Consistency
+
+- **Success responses should follow this format: `{ success: true, data: { ... } }`**
+- **Error responses should follow this format: `{ success: false, error: { code: string, message: string } }`**
+
+#### Error Handling: Standardized Approach
+
+- **Return server errors with HTTP status codes in a consistent format.**
+- **Handle client-side errors using try-catch and React Error Boundary.**
+- **Use toast notifications or alert components to provide user feedback.**
+
+---
+
+### Optimization & Maintainability
+
+#### Performance Optimization
+
+- **Use React.lazy() and Suspense for code splitting in large components.**
+- **Use React.memo, useMemo, and useCallback appropriately to prevent unnecessary re-renders.**
+- **Optimize images using Next.js Image component.**
+
+#### Component Documentation
+
+- **Document all common components using JSDoc-style comments.**
+- **Add comments for complex logic in functions.**
+
+#### Testing: Use Jest & React Testing Library
+
+- **Use Jest and React Testing Library for unit and component tests.**
+- **Use Vitest for API and integration testing.**
+- **Write tests for all common components and critical business logic.**
+
+#### Environment Variables Management
+
+- **Store sensitive information in `.env.local` and do not commit it to Git.**
+- **Use `.env.production` for production variables and `.env.development` for development variables.**
+- **Manage environment variables centrally using a config file.**
+
+---
+
+### Project Structure
+
+#### Main Folder Structure
+
+- **Follow the structure below.**  
+    _Note: Do not use a `src` folder._
+
+```
+your-nextjs-project/
+│
+├── app/                     # App Router routes
+│   ├── api/                 # API endpoints
+│   ├── dashboard/           # Individual pages (non-reusable components included)
+│   │   ├── page.tsx         # Dashboard page
+│   │   └── DashboardStats.tsx  # Page-specific component
+│   └── profile/             # Profile-related pages
+│       ├── page.tsx         # Profile page
+│       └── ProfileCard.tsx  # Page-specific component
+│
+├── components/              # Shared components
+│   ├── ui/                  # Common UI components built with ShadCN
+│   │   ├── button.tsx
+│   │   ├── input.tsx
+│   │   ├── select.tsx
+│   ├── layout/              # Layout-related shared components
+│   │   ├── header.tsx
+│   │   ├── footer.tsx
+│   │   ├── sidebar.tsx
+│   ├── OptionsDropdown.tsx  # Reusable common component
+│   ├── PromptInput.tsx      # Functional component for specific use cases
+│   └── GeneratedImagePreview.tsx
+│
+├── db/                      # Database-related files
+│   ├── schema.ts            # Drizzle ORM schema definition
+│   └── index.ts             # Database connection initialization
+│
+├── drizzle/                 # Drizzle ORM configuration
+│
+├── public/                  # Static files (images, fonts, etc.)
+│   └── favicon.ico
+│
+├── styles/                  # Global styles (CSS, SCSS, Tailwind, etc.)
+│   └── globals.css
+│
+├── types/                   # Common type and interface definitions
+│   └── index.ts             # Shared types and interfaces
+│
+├── utils/                   # Utility functions
+│   └── fetcher.ts           # API utility functions
+│
+├── middleware.ts            # Middleware settings
+├── .env                     # Environment variable configuration
+├── drizzle.config.ts        # Drizzle ORM settings
+├── .eslintrc.js             # ESLint configuration
+├── .prettierrc              # Prettier configuration
+├── .gitignore               # Git ignore settings
+├── next.config.js           # Next.js configuration
+├── package.json             # Project package information
+├── tsconfig.json            # TypeScript configuration
+└── README.md                # Project documentation
+```
+
+---
+
+### Git Commit Message Guidelines
+
+#### Basic Format
+```
+<type>: <subject>
+
+<body>
+```
+
+#### Types
+- **feat**: Add new feature
+- **fix**: Bug fix
+- **docs**: Documentation changes
+- **style**: Formatting, missing semicolons, etc. (no code change)
+- **refactor**: Code refactoring
+- **test**: Test-related changes
+- **chore**: Build tasks, package manager configs, etc.
+
+#### Subject Rules
+- Keep under 50 characters
+- Use imperative, present tense ("add" not "added")
+- Don't capitalize first letter
+- No period at the end
+
+#### Body Rules
+- Optional (use when needed)
+- Keep each line under 72 characters
+- Explain what and why vs. how
+- Use bullet points with "-" for multiple lines
+
+#### Examples
+```
+feat: implement user authentication
+
+- Connect login/signup APIs
+- Add JWT token-based auth
+- Support social login options
+```
+
+```
+fix: resolve button alignment issues on mobile
+```
+
+---
+### Additional Rules
+
+#### Internationalization (i18n) (If Needed)
+
+- **Use next-intl to support multilingual content for all user-facing text.**
+- **Manage language-specific text in JSON files within the `locales` folder.**
