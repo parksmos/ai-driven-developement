@@ -11,7 +11,7 @@ export default function Header() {
         
         <nav className="flex items-center space-x-8">
           <Link 
-            href="/" 
+            href="/create" 
             className="text-base font-semibold hover:text-[#4A90E2] hover:border-b-2 hover:border-[#4A90E2] transition-colors"
           >
             이미지 생성

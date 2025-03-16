@@ -30,6 +30,8 @@ alwaysApply: true
     }
     ```
     
+- **Create interfaces in the types/index.ts file.**
+    
 
 #### ORM: Use Drizzle
 
@@ -39,6 +41,7 @@ alwaysApply: true
 #### Component Creation: Prioritize ShadCN
 
 - **All UI components should be created using ShadCN.**
+- **Use the following CLI command to create ShadCN components: `npx shadcn@latest add`**
 
 ---
 
@@ -148,8 +151,19 @@ your-nextjs-project/
 │
 ├── drizzle/                 # Drizzle ORM configuration
 │
+├── hooks/                   # Custom hooks
+│   ├── use-toast.ts         # Toast-related hooks
+│   ├── use-auth.ts          # Authentication-related hooks
+│   └── use-media.ts         # Media queries and UI-related hooks
+│
 ├── public/                  # Static files (images, fonts, etc.)
 │   └── favicon.ico
+│
+├── store/                   # State management
+│   ├── gallery.ts           # Gallery-related state management
+│   ├── auth.ts              # Authentication-related state management
+│   ├── community.ts         # Community-related state management
+│   └── index.ts             # State management utilities and type definitions
 │
 ├── styles/                  # Global styles (CSS, SCSS, Tailwind, etc.)
 │   └── globals.css
@@ -158,7 +172,8 @@ your-nextjs-project/
 │   └── index.ts             # Shared types and interfaces
 │
 ├── utils/                   # Utility functions
-│   └── fetcher.ts           # API utility functions
+│   ├── fetcher.ts           # API utility functions
+│   └── mockData.ts          # Mock data management
 │
 ├── middleware.ts            # Middleware settings
 ├── .env                     # Environment variable configuration
@@ -177,6 +192,7 @@ your-nextjs-project/
 ### Git Commit Message Guidelines
 
 #### Basic Format
+
 ```
 <type>: <subject>
 
@@ -184,6 +200,7 @@ your-nextjs-project/
 ```
 
 #### Types
+
 - **feat**: Add new feature
 - **fix**: Bug fix
 - **docs**: Documentation changes
@@ -193,18 +210,21 @@ your-nextjs-project/
 - **chore**: Build tasks, package manager configs, etc.
 
 #### Subject Rules
+
 - Keep under 50 characters
 - Use imperative, present tense ("add" not "added")
 - Don't capitalize first letter
 - No period at the end
 
 #### Body Rules
+
 - Optional (use when needed)
 - Keep each line under 72 characters
 - Explain what and why vs. how
 - Use bullet points with "-" for multiple lines
 
 #### Examples
+
 ```
 feat: implement user authentication
 
@@ -218,6 +238,7 @@ fix: resolve button alignment issues on mobile
 ```
 
 ---
+
 ### Additional Rules
 
 #### Internationalization (i18n) (If Needed)

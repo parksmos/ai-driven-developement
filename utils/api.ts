@@ -1,4 +1,4 @@
-import { IPost, IComment } from "../types";
+import { IPost, IComment, IImageStyle, IShareData } from "../types";
 import { mockCommunityFeed } from "./mockData";
 
 // 목업 API - 커뮤니티 피드 가져오기
@@ -72,28 +72,234 @@ export async function fetchPostComments(postId: string): Promise<{ success: bool
   };
 }
 
-// 목업 API - 이미지 생성하기
-export async function generateImage(prompt: string): Promise<{ success: boolean, imageURL: string }> {
-  // 실제 API 호출을 시뮬레이션하기 위한 지연 추가
-  await new Promise(resolve => setTimeout(resolve, 1500));
+// 목업 API - 이미지 생성하기 (스타일 옵션을 포함한 업데이트 버전)
+export async function generateImage(prompt: string, style?: IImageStyle): Promise<{ success: boolean, data?: { imageURL: string }, error?: { code: string, message: string } }> {
+  // 기본 스타일 값 설정
+  const defaultStyle: IImageStyle = {
+    color: 'bright',
+    texture: 'smooth',
+    mood: 'warm',
+    intensity: 50
+  };
   
-  // 고정된 이미지 URL 목록
+  // style이 없을 경우 기본값 사용
+  const finalStyle = style || defaultStyle;
+  
+  // 실제 API 호출을 시뮬레이션하기 위한 지연 추가 (복잡한 스타일 옵션이 적용된 경우 더 오래 걸리는 것처럼 시뮬레이션)
+  const delay = 1500 + (finalStyle.intensity * 5);
+  await new Promise(resolve => setTimeout(resolve, delay));
+  
+  // 최소 글자 수 체크 (오류 시뮬레이션)
+  if (prompt.length < 10) {
+    return {
+      success: false,
+      error: {
+        code: 'PROMPT_TOO_SHORT',
+        message: '프롬프트는 최소 10자 이상이어야 합니다.'
+      }
+    };
+  }
+  
+  // 다운로드에 최적화된 이미지 URL 목록 - Picsum Photos는 다운로드 친화적
   const imageURLs = [
-    "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=600&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=600&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1573096108468-702f6014ef28?w=600&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1633109741715-6b7bb8a6cc65?w=600&h=600&fit=crop"
+    // 색상 스타일에 따른 이미지
+    "https://picsum.photos/id/10/800/800",   // bright - 자연 풍경
+    "https://picsum.photos/id/12/800/800",   // dark - 어두운 질감
+    "https://picsum.photos/id/96/800/800",   // vivid - 밝은 색상
+    "https://picsum.photos/id/37/800/800",   // pastel - 흐린 질감
+    "https://picsum.photos/id/146/800/800",  // monochrome - 흑백 느낌
+    
+    // 텍스처 스타일에 따른 이미지
+    "https://picsum.photos/id/134/800/800",  // smooth - 매끄러운 질감
+    "https://picsum.photos/id/158/800/800",  // rough - 거친 질감
+    "https://picsum.photos/id/65/800/800",   // matte - 매트한 표면
+    "https://picsum.photos/id/136/800/800",  // glossy - 광택있는 질감
+    
+    // 무드 스타일에 따른 이미지
+    "https://picsum.photos/id/237/800/800",  // warm - 따뜻한 분위기
+    "https://picsum.photos/id/162/800/800",  // cool - 차가운 분위기
+    "https://picsum.photos/id/110/800/800",  // dreamy - 몽환적 분위기
+    "https://picsum.photos/id/152/800/800",  // realistic - 사실적 분위기
   ];
   
-  // 랜덤하게 이미지 선택
-  const randomIndex = Math.floor(Math.random() * imageURLs.length);
-  const imageURL = imageURLs[randomIndex];
+  // 스타일에 따른 이미지 선택 로직
+  let imageIndex = 0;
+  
+  // 색상 스타일에 따른 이미지 선택
+  switch(finalStyle.color) {
+    case 'bright':
+      imageIndex = 0;
+      break;
+    case 'dark':
+      imageIndex = 1;
+      break;
+    case 'vivid':
+      imageIndex = 2;
+      break;
+    case 'pastel':
+      imageIndex = 3;
+      break;
+    case 'monochrome':
+      imageIndex = 4;
+      break;
+    default:
+      imageIndex = 0;
+  }
+  
+  // 텍스처 스타일이 우선 적용되는 경우
+  switch(finalStyle.texture) {
+    case 'smooth':
+      imageIndex = 5;
+      break;
+    case 'rough':
+      imageIndex = 6;
+      break;
+    case 'matte':
+      imageIndex = 7;
+      break;
+    case 'glossy':
+      imageIndex = 8;
+      break;
+    default:
+      // 색상 스타일 유지
+      break;
+  }
+  
+  // 무드 스타일이 가장 강한 경우(강도가 70% 이상)
+  if (finalStyle.intensity >= 70) {
+    switch(finalStyle.mood) {
+      case 'warm':
+        imageIndex = 9;
+        break;
+      case 'cool':
+        imageIndex = 10;
+        break;
+      case 'dreamy':
+        imageIndex = 11;
+        break;
+      case 'realistic':
+        imageIndex = 12;
+        break;
+      default:
+        // 이전 스타일 유지
+        break;
+    }
+  }
+  
+  // 랜덤 요소 추가 (1% 확률로 강아지 이미지 제공 - 재미요소)
+  const random = Math.random();
+  if (random < 0.01) {
+    imageIndex = 9; // 강아지 이미지
+  }
+  
+  // 생성된 이미지 URL
+  const selectedImageURL = imageURLs[imageIndex];
+  
+  // 캐시 방지 및 다운로드 식별자 추가
+  const downloadParam = `?download=true&cache=${Date.now()}`;
   
   return {
     success: true,
-    imageURL
+    data: {
+      imageURL: selectedImageURL + downloadParam
+    }
   };
+}
+
+// 목업 API - 갤러리에 저장하기
+export async function saveToGallery(
+  imageURL: string, 
+  prompt: string, 
+  style?: IImageStyle
+): Promise<{ success: boolean, data?: { imageId: string }, error?: { code: string, message: string } }> {
+  // 기본 스타일 값 설정
+  const defaultStyle: IImageStyle = {
+    color: 'bright',
+    texture: 'smooth',
+    mood: 'warm',
+    intensity: 50
+  };
+  
+  // style이 없을 경우 기본값 사용
+  const finalStyle = style || defaultStyle;
+  
+  // 실제 API 호출을 시뮬레이션하기 위한 지연 추가
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  // 가상의 이미지 ID 생성
+  const imageId = `img_${Date.now()}`;
+  
+  return {
+    success: true,
+    data: {
+      imageId
+    }
+  };
+}
+
+// 목업 API - 커뮤니티에 공유하기
+export async function shareToCommuity(
+  imageURL: string,
+  prompt: string,
+  style?: IImageStyle,
+  title: string,
+  description: string,
+  tags: string[],
+  isPublic: boolean
+): Promise<{ success: boolean, data?: { postId: string }, error?: { code: string, message: string } }> {
+  // 기본 스타일 값 설정
+  const defaultStyle: IImageStyle = {
+    color: 'bright',
+    texture: 'smooth',
+    mood: 'warm',
+    intensity: 50
+  };
+  
+  // style이 없을 경우 기본값 사용
+  const finalStyle = style || defaultStyle;
+  
+  // 실제 API 호출을 시뮬레이션하기 위한 지연 추가
+  await new Promise(resolve => setTimeout(resolve, 800));
+  
+  // 필수 필드 체크 (오류 시뮬레이션)
+  if (!title || title.trim() === '') {
+    return {
+      success: false,
+      error: {
+        code: 'EMPTY_TITLE',
+        message: '제목은 필수 입력 항목입니다.'
+      }
+    };
+  }
+  
+  // 가상의 포스트 ID 생성
+  const postId = `post_${Date.now()}`;
+  
+  return {
+    success: true,
+    data: {
+      postId
+    }
+  };
+}
+
+// 기존 코드와 통합을 위한 래퍼 함수
+export async function handleShareToCommuity(
+  imageURL: string,
+  prompt: string,
+  style?: IImageStyle,
+  shareData: IShareData
+): Promise<{ success: boolean, data?: { postId: string }, error?: { code: string, message: string } }> {
+  // shareToCommuity 함수 호출 및 결과 리턴
+  return shareToCommuity(
+    imageURL,
+    prompt,
+    style,
+    shareData.title,
+    shareData.description,
+    shareData.tags,
+    shareData.isPublic
+  );
 }
 
 // 목업 API - 좋아요 토글

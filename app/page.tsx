@@ -5,10 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import CommunityFeedCard from "@/components/CommunityFeedCard";
 import { IPost } from "@/types";
-import { fetchCommunityFeed, generateImage } from "@/utils/api";
+import { fetchCommunityFeed } from "@/utils/api";
 import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function Home() {
+  const router = useRouter();
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [feedPosts, setFeedPosts] = useState<IPost[]>([]);
@@ -35,31 +37,16 @@ export default function Home() {
     loadCommunityFeed();
   }, []);
 
-  // 이미지 생성 처리
-  const handleGenerateImage = async () => {
+  // 이미지 생성 페이지로 이동
+  const handleGenerateImage = () => {
     if (!prompt.trim()) {
       setError("프롬프트를 입력해 주세요");
       return;
     }
 
-    try {
-      setIsGenerating(true);
-      setError("");
-      const result = await generateImage(prompt);
-      
-      if (result.success) {
-        // 실제 구현에서는 여기서 이미지 생성 후 상세 화면으로 이동
-        alert(`이미지가 생성되었습니다!\n프롬프트: ${prompt}`);
-        setPrompt("");
-      } else {
-        setError("이미지 생성에 실패했습니다. 다시 시도해주세요.");
-      }
-    } catch (err) {
-      setError("이미지 생성 중 오류가 발생했습니다.");
-      console.error(err);
-    } finally {
-      setIsGenerating(false);
-    }
+    // 프롬프트를 쿼리 파라미터로 전달하여 이미지 생성 페이지로 이동
+    const encodedPrompt = encodeURIComponent(prompt);
+    router.push(`/create?prompt=${encodedPrompt}`);
   };
 
   return (
@@ -82,16 +69,9 @@ export default function Home() {
             <Button 
               onClick={handleGenerateImage}
               className="w-full p-6 bg-[#4A90E2] hover:bg-[#3A80D2] text-base font-semibold"
-              disabled={isGenerating || !prompt.trim()}
+              disabled={!prompt.trim()}
             >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                  이미지 생성 중...
-                </>
-              ) : (
-                '이미지 생성하기'
-              )}
+              이미지 생성 페이지로 이동
             </Button>
             
             {error && (
