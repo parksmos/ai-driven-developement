@@ -46,6 +46,7 @@ export interface IGenerateImageRequest {
   style: IImageStyle;
 }
 
+<<<<<<< HEAD
 // API 응답 관련 타입
 export type TApiResponse<T> = {
   success: boolean;
@@ -67,6 +68,12 @@ export type TSaveToGalleryResponse = TApiResponse<{
 export type TShareToCommunityResponse = TApiResponse<{
   postId: string;
 }>;
+=======
+export interface IGenerateImageResponse {
+  success: boolean;
+  imageURL: string;
+}
+>>>>>>> 31b4dfec3fcb29d55b01af2940803b199398bfcb
 
 // 공유 모달 관련 타입
 export interface IShareModalProps {
@@ -75,6 +82,7 @@ export interface IShareModalProps {
   imageURL: string;
   prompt: string;
   style: IImageStyle;
+<<<<<<< HEAD
   onShare: (data: IShareData) => Promise<TShareToCommunityResponse>;
 }
 
@@ -83,6 +91,9 @@ export interface IImageModalProps {
   isOpen: boolean;
   onClose: () => void;
   imageURL: string;
+=======
+  onShare: (data: IShareData) => Promise<void>;
+>>>>>>> 31b4dfec3fcb29d55b01af2940803b199398bfcb
 }
 
 export interface IShareData {
@@ -90,10 +101,13 @@ export interface IShareData {
   description: string;
   tags: string[];
   isPublic: boolean;
+<<<<<<< HEAD
 }
 
 // 셀렉트 컴포넌트 관련 타입
 export interface ISelectOption {
   value: string;
   label: string;
+=======
+>>>>>>> 31b4dfec3fcb29d55b01af2940803b199398bfcb
 } 

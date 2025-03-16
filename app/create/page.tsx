@@ -3,11 +3,16 @@
 import { useState, useEffect } from 'react';
 import { Loader2, Download, Save, Share } from 'lucide-react';
 import { Textarea } from '@/components/ui/textarea';
+<<<<<<< HEAD
 import { Select } from '@/components/ui/select';
+=======
+import { Select, ISelectOption } from '@/components/ui/select';
+>>>>>>> 31b4dfec3fcb29d55b01af2940803b199398bfcb
 import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import ShareModal from '@/components/ShareModal';
 import ImageModal from '@/components/ImageModal';
+<<<<<<< HEAD
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -31,6 +36,12 @@ import {
 } from '@/types';
 import { generateImage, saveToGallery, handleShareToCommuity } from '@/utils/api';
 import { downloadImage, downloadImageWithCanvas } from '@/utils/downloadImage';
+=======
+import { IImageStyle, IShareData } from '@/types';
+import { generateImage, saveToGallery, handleShareToCommuity } from '@/utils/api';
+import { toast } from 'react-hot-toast';
+import { useSearchParams } from 'next/navigation';
+>>>>>>> 31b4dfec3fcb29d55b01af2940803b199398bfcb
 
 // 색감 옵션
 const colorOptions: ISelectOption[] = [
@@ -59,7 +70,10 @@ const moodOptions: ISelectOption[] = [
 
 export default function CreatePage() {
   const searchParams = useSearchParams();
+<<<<<<< HEAD
   const { toast } = useToast();
+=======
+>>>>>>> 31b4dfec3fcb29d55b01af2940803b199398bfcb
   
   // 상태 관리
   const [prompt, setPrompt] = useState('');
@@ -70,7 +84,10 @@ export default function CreatePage() {
     intensity: 50,
   });
   const [isGenerating, setIsGenerating] = useState(false);
+<<<<<<< HEAD
   const [isDownloading, setIsDownloading] = useState(false);
+=======
+>>>>>>> 31b4dfec3fcb29d55b01af2940803b199398bfcb
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isImageLoading, setIsImageLoading] = useState(false);
   const [imageLoadError, setImageLoadError] = useState(false);
@@ -124,13 +141,18 @@ export default function CreatePage() {
       
       const response = await generateImage(prompt, style);
       
+<<<<<<< HEAD
       if (response.success && response.data?.imageURL) {
+=======
+      if (response.success && response.imageURL) {
+>>>>>>> 31b4dfec3fcb29d55b01af2940803b199398bfcb
         // 이미지 URL이 유효한지 확인
         setIsImageLoading(true);
         
         // 이미지가 미리 캐시되도록 시도
         const img = new Image();
         img.onload = () => {
+<<<<<<< HEAD
           setGeneratedImage(response.data!.imageURL);
           setIsImageLoading(false);
           toast({
@@ -165,6 +187,25 @@ export default function CreatePage() {
         description: "이미지 생성 중 오류가 발생했습니다.",
         variant: "destructive",
       });
+=======
+          setGeneratedImage(response.imageURL);
+          setIsImageLoading(false);
+          toast.success('이미지가 생성되었습니다!');
+        };
+        img.onerror = () => {
+          console.error('Image failed to load:', response.imageURL);
+          setImageLoadError(true);
+          setIsImageLoading(false);
+          toast.error('이미지 로드에 실패했습니다. 다시 시도해주세요.');
+        };
+        img.src = response.imageURL;
+      } else {
+        toast.error('이미지 생성에 실패했습니다. 다시 시도해주세요.');
+      }
+    } catch (error) {
+      console.error('Image generation error:', error);
+      toast.error('이미지 생성 중 오류가 발생했습니다.');
+>>>>>>> 31b4dfec3fcb29d55b01af2940803b199398bfcb
       setImageLoadError(true);
     } finally {
       setIsGenerating(false);
@@ -179,6 +220,7 @@ export default function CreatePage() {
       const response = await saveToGallery(generatedImage, prompt, style);
       
       if (response.success) {
+<<<<<<< HEAD
         toast({
           title: "성공",
           description: "갤러리에 저장되었습니다!",
@@ -199,10 +241,20 @@ export default function CreatePage() {
         description: "갤러리 저장 중 오류가 발생했습니다.",
         variant: "destructive",
       });
+=======
+        toast.success('갤러리에 저장되었습니다!');
+      } else {
+        toast.error('갤러리 저장에 실패했습니다.');
+      }
+    } catch (error) {
+      console.error('Gallery save error:', error);
+      toast.error('갤러리 저장 중 오류가 발생했습니다.');
+>>>>>>> 31b4dfec3fcb29d55b01af2940803b199398bfcb
     }
   };
 
   // 커뮤니티 공유 처리
+<<<<<<< HEAD
   const handleShare = async (shareData: IShareData): Promise<TShareToCommunityResponse> => {
     if (!generatedImage) {
       return { 
@@ -213,6 +265,10 @@ export default function CreatePage() {
         } 
       };
     }
+=======
+  const handleShare = async (shareData: IShareData) => {
+    if (!generatedImage) return { success: false, postId: '' };
+>>>>>>> 31b4dfec3fcb29d55b01af2940803b199398bfcb
     
     try {
       const response = await handleShareToCommuity(
@@ -223,6 +279,7 @@ export default function CreatePage() {
       );
       
       if (response.success) {
+<<<<<<< HEAD
         toast({
           title: "성공",
           description: "커뮤니티에 공유되었습니다!",
@@ -235,10 +292,14 @@ export default function CreatePage() {
           description: errorMessage,
           variant: "destructive",
         });
+=======
+        toast.success('커뮤니티에 공유되었습니다!');
+>>>>>>> 31b4dfec3fcb29d55b01af2940803b199398bfcb
       }
       
       return response;
     } catch (error) {
+<<<<<<< HEAD
       console.error('공유 오류:', error);
       toast({
         title: "오류",
@@ -301,6 +362,24 @@ export default function CreatePage() {
     } finally {
       setIsDownloading(false);
     }
+=======
+      console.error('Share error:', error);
+      toast.error('공유 중 오류가 발생했습니다.');
+      return { success: false, postId: '' };
+    }
+  };
+
+  // 이미지 다운로드 처리
+  const handleDownload = () => {
+    if (!generatedImage) return;
+    
+    const link = document.createElement('a');
+    link.href = generatedImage;
+    link.download = `artify-${Date.now()}.jpg`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+>>>>>>> 31b4dfec3fcb29d55b01af2940803b199398bfcb
   };
 
   // 포커스 처리
@@ -410,11 +489,15 @@ export default function CreatePage() {
                 onClick={() => setIsImageModalOpen(true)}
                 onError={() => {
                   setImageLoadError(true);
+<<<<<<< HEAD
                   toast({
                     title: "오류",
                     description: "이미지 로드에 실패했습니다.",
                     variant: "destructive",
                   });
+=======
+                  toast.error('이미지 로드에 실패했습니다.');
+>>>>>>> 31b4dfec3fcb29d55b01af2940803b199398bfcb
                 }}
               />
             </div>
@@ -436,7 +519,10 @@ export default function CreatePage() {
             variant="outline"
             onClick={handleSaveToGallery}
             className="flex-1"
+<<<<<<< HEAD
             disabled={isGenerating || isDownloading}
+=======
+>>>>>>> 31b4dfec3fcb29d55b01af2940803b199398bfcb
           >
             <Save className="mr-2 h-5 w-5" />
             갤러리에 저장
@@ -444,12 +530,16 @@ export default function CreatePage() {
           <Button
             onClick={() => setIsShareModalOpen(true)}
             className="flex-1"
+<<<<<<< HEAD
             disabled={isGenerating || isDownloading}
+=======
+>>>>>>> 31b4dfec3fcb29d55b01af2940803b199398bfcb
           >
             <Share className="mr-2 h-5 w-5" />
             커뮤니티에 공유
           </Button>
           <Button
+<<<<<<< HEAD
             onClick={handleDownload}
             disabled={isGenerating || isDownloading}
             variant={isDownloading ? "outline" : "default"}
@@ -466,6 +556,13 @@ export default function CreatePage() {
                 <span>다운로드</span>
               </>
             )}
+=======
+            variant="outline"
+            onClick={handleDownload}
+          >
+            <Download className="mr-2 h-5 w-5" />
+            다운로드
+>>>>>>> 31b4dfec3fcb29d55b01af2940803b199398bfcb
           </Button>
         </div>
       )}

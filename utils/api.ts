@@ -73,7 +73,11 @@ export async function fetchPostComments(postId: string): Promise<{ success: bool
 }
 
 // 목업 API - 이미지 생성하기 (스타일 옵션을 포함한 업데이트 버전)
+<<<<<<< HEAD
 export async function generateImage(prompt: string, style?: IImageStyle): Promise<{ success: boolean, data?: { imageURL: string }, error?: { code: string, message: string } }> {
+=======
+export async function generateImage(prompt: string, style?: IImageStyle): Promise<{ success: boolean, imageURL: string }> {
+>>>>>>> 31b4dfec3fcb29d55b01af2940803b199398bfcb
   // 기본 스타일 값 설정
   const defaultStyle: IImageStyle = {
     color: 'bright',
@@ -93,6 +97,7 @@ export async function generateImage(prompt: string, style?: IImageStyle): Promis
   if (prompt.length < 10) {
     return {
       success: false,
+<<<<<<< HEAD
       error: {
         code: 'PROMPT_TOO_SHORT',
         message: '프롬프트는 최소 10자 이상이어야 합니다.'
@@ -126,6 +131,36 @@ export async function generateImage(prompt: string, style?: IImageStyle): Promis
   let imageIndex = 0;
   
   // 색상 스타일에 따른 이미지 선택
+=======
+      imageURL: ''
+    };
+  }
+  
+  // 고정된 이미지 URL 목록 - 더 안정적인 URL 사용
+  const imageURLs = [
+    "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&h=600&q=80",
+    "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=600&h=600&q=80",
+    "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=600&h=600&q=80",
+    "https://images.unsplash.com/photo-1573096108468-702f6014ef28?w=600&h=600&q=80",
+    "https://images.unsplash.com/photo-1633109741715-6b7bb8a6cc65?w=600&h=600&q=80"
+  ];
+  
+  // 추가 이미지 (확실하게 로드되는 것으로 확인된 이미지)
+  const fallbackImageURLs = [
+    "https://source.unsplash.com/random/600x600?art",
+    "https://source.unsplash.com/random/600x600?painting",
+    "https://source.unsplash.com/random/600x600?digital",
+    "https://picsum.photos/600/600",
+    "https://picsum.photos/id/237/600/600"
+  ];
+  
+  // 모든 이미지 URL을 하나의 배열로 합침
+  const allImageURLs = [...imageURLs, ...fallbackImageURLs];
+  
+  // 스타일에 따라 다른 이미지 선택 로직 구현
+  let imageIndex = 0;
+  
+>>>>>>> 31b4dfec3fcb29d55b01af2940803b199398bfcb
   switch(finalStyle.color) {
     case 'bright':
       imageIndex = 0;
@@ -143,6 +178,7 @@ export async function generateImage(prompt: string, style?: IImageStyle): Promis
       imageIndex = 4;
       break;
     default:
+<<<<<<< HEAD
       imageIndex = 0;
   }
   
@@ -203,6 +239,27 @@ export async function generateImage(prompt: string, style?: IImageStyle): Promis
     data: {
       imageURL: selectedImageURL + downloadParam
     }
+=======
+      // 랜덤 선택
+      imageIndex = Math.floor(Math.random() * allImageURLs.length);
+  }
+  
+  // 간헐적 실패 시뮬레이션 (10% 확률) - 개발 테스트용
+  // 실제 서비스에서는 이 부분 제거
+  /* 
+  const shouldFail = Math.random() < 0.1;
+  if (shouldFail) {
+    return {
+      success: false,
+      imageURL: ''
+    };
+  }
+  */
+  
+  return {
+    success: true,
+    imageURL: allImageURLs[imageIndex]
+>>>>>>> 31b4dfec3fcb29d55b01af2940803b199398bfcb
   };
 }
 
@@ -211,7 +268,11 @@ export async function saveToGallery(
   imageURL: string, 
   prompt: string, 
   style?: IImageStyle
+<<<<<<< HEAD
 ): Promise<{ success: boolean, data?: { imageId: string }, error?: { code: string, message: string } }> {
+=======
+): Promise<{ success: boolean, imageId: string }> {
+>>>>>>> 31b4dfec3fcb29d55b01af2940803b199398bfcb
   // 기본 스타일 값 설정
   const defaultStyle: IImageStyle = {
     color: 'bright',
@@ -231,9 +292,13 @@ export async function saveToGallery(
   
   return {
     success: true,
+<<<<<<< HEAD
     data: {
       imageId
     }
+=======
+    imageId
+>>>>>>> 31b4dfec3fcb29d55b01af2940803b199398bfcb
   };
 }
 
@@ -246,7 +311,11 @@ export async function shareToCommuity(
   description: string,
   tags: string[],
   isPublic: boolean
+<<<<<<< HEAD
 ): Promise<{ success: boolean, data?: { postId: string }, error?: { code: string, message: string } }> {
+=======
+): Promise<{ success: boolean, postId: string }> {
+>>>>>>> 31b4dfec3fcb29d55b01af2940803b199398bfcb
   // 기본 스타일 값 설정
   const defaultStyle: IImageStyle = {
     color: 'bright',
@@ -265,10 +334,14 @@ export async function shareToCommuity(
   if (!title || title.trim() === '') {
     return {
       success: false,
+<<<<<<< HEAD
       error: {
         code: 'EMPTY_TITLE',
         message: '제목은 필수 입력 항목입니다.'
       }
+=======
+      postId: ''
+>>>>>>> 31b4dfec3fcb29d55b01af2940803b199398bfcb
     };
   }
   
@@ -277,9 +350,13 @@ export async function shareToCommuity(
   
   return {
     success: true,
+<<<<<<< HEAD
     data: {
       postId
     }
+=======
+    postId
+>>>>>>> 31b4dfec3fcb29d55b01af2940803b199398bfcb
   };
 }
 
@@ -289,8 +366,12 @@ export async function handleShareToCommuity(
   prompt: string,
   style?: IImageStyle,
   shareData: IShareData
+<<<<<<< HEAD
 ): Promise<{ success: boolean, data?: { postId: string }, error?: { code: string, message: string } }> {
   // shareToCommuity 함수 호출 및 결과 리턴
+=======
+): Promise<{ success: boolean, postId: string }> {
+>>>>>>> 31b4dfec3fcb29d55b01af2940803b199398bfcb
   return shareToCommuity(
     imageURL,
     prompt,
