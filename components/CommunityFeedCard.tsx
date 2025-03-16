@@ -11,7 +11,8 @@ import { toggleLike, toggleScrap, addComment } from "@/utils/api";
 export default function CommunityFeedCard({ post: initialPost }: ICommunityFeedCardProps) {
   // 로컬 상태로 게시물 데이터 관리
   const [post, setPost] = useState<IPost>(initialPost);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLikeLoading, setIsLikeLoading] = useState(false);
+  const [isScrapLoading, setIsScrapLoading] = useState(false);
   const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
@@ -33,9 +34,9 @@ export default function CommunityFeedCard({ post: initialPost }: ICommunityFeedC
     e.preventDefault(); // Link의 기본 동작 방지
     e.stopPropagation(); // 이벤트 버블링 방지
     
-    if (isLoading) return;
+    if (isLikeLoading) return;
     
-    setIsLoading(true);
+    setIsLikeLoading(true);
     try {
       const result = await toggleLike(postId);
       if (result.success) {
@@ -48,7 +49,7 @@ export default function CommunityFeedCard({ post: initialPost }: ICommunityFeedC
     } catch (error) {
       console.error("좋아요 처리 중 오류가 발생했습니다:", error);
     } finally {
-      setIsLoading(false);
+      setIsLikeLoading(false);
     }
   };
   
@@ -57,9 +58,9 @@ export default function CommunityFeedCard({ post: initialPost }: ICommunityFeedC
     e.preventDefault(); // Link의 기본 동작 방지
     e.stopPropagation(); // 이벤트 버블링 방지
     
-    if (isLoading) return;
+    if (isScrapLoading) return;
     
-    setIsLoading(true);
+    setIsScrapLoading(true);
     try {
       const result = await toggleScrap(postId);
       if (result.success) {
@@ -72,7 +73,7 @@ export default function CommunityFeedCard({ post: initialPost }: ICommunityFeedC
     } catch (error) {
       console.error("스크랩 처리 중 오류가 발생했습니다:", error);
     } finally {
-      setIsLoading(false);
+      setIsScrapLoading(false);
     }
   };
   
@@ -146,11 +147,11 @@ export default function CommunityFeedCard({ post: initialPost }: ICommunityFeedC
               <button 
                 className="flex items-center gap-1 hover:text-[#4A90E2] transition-colors"
                 onClick={handleLikeToggle}
-                disabled={isLoading}
+                disabled={isLikeLoading}
               >
                 <Heart 
                   className={`h-4 w-4 ${isLiked ? 'fill-red-500 text-red-500' : 'text-gray-500'} 
-                             ${isLoading ? 'opacity-50' : 'hover:scale-110 transition-transform'}`} 
+                             ${isLikeLoading ? 'opacity-50' : 'hover:scale-110 transition-transform'}`} 
                 />
                 <span>{likes}</span>
               </button>
@@ -165,11 +166,11 @@ export default function CommunityFeedCard({ post: initialPost }: ICommunityFeedC
             <button 
               className="flex items-center hover:text-[#4A90E2] transition-colors"
               onClick={handleScrapToggle}
-              disabled={isLoading}
+              disabled={isScrapLoading}
             >
               <Bookmark 
                 className={`h-4 w-4 ${isScrapped ? 'fill-blue-500 text-blue-500' : 'text-gray-500'}
-                           ${isLoading ? 'opacity-50' : 'hover:scale-110 transition-transform'}`} 
+                           ${isScrapLoading ? 'opacity-50' : 'hover:scale-110 transition-transform'}`} 
               />
               <span className="ml-1 text-sm">{scraps}</span>
             </button>

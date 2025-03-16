@@ -1,189 +1,260 @@
-import { useState } from 'react';
-import { IShareModalProps, IShareData } from '@/types';
-import { X } from 'lucide-react';
+"use client";
 
-export default function ShareModal({ isOpen, onClose, imageURL, prompt, style, onShare }: IShareModalProps) {
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [tagInput, setTagInput] = useState('');
-  const [tags, setTags] = useState<string[]>([]);
+import React, { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { X, Share2 } from "lucide-react";
+import { TShareToCommunityResponse } from "@/types";
+import { toast } from "@/components/ui/use-toast";
+
+interface ShareModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  imageId: string;
+  imageURL: string;
+  initialTags?: string[];
+  onShare: (
+    imageId: string,
+    title: string,
+    description: string,
+    tags: string[],
+    isPublic: boolean
+  ) => Promise<TShareToCommunityResponse>;
+}
+
+const ShareModal = ({
+  isOpen,
+  onClose,
+  imageId,
+  imageURL,
+  initialTags = [],
+  onShare,
+}: ShareModalProps) => {
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [tags, setTags] = useState<string[]>(initialTags);
+  const [tagInput, setTagInput] = useState("");
   const [isPublic, setIsPublic] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
 
   if (!isOpen) return null;
 
-  const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' || e.key === ',') {
+  const handleTagInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if ((e.key === "Enter" || e.key === ",") && tagInput.trim()) {
       e.preventDefault();
-      addTag();
+      addTag(tagInput.trim());
     }
   };
 
-  const addTag = () => {
-    const trimmedTag = tagInput.trim();
-    if (trimmedTag && !tags.includes(trimmedTag)) {
-      setTags([...tags, trimmedTag]);
-      setTagInput('');
+  const addTag = (tag: string) => {
+    // 중복 태그 제거 및 공백 제거 후 추가
+    const normalizedTag = tag.trim().toLowerCase();
+    if (normalizedTag && !tags.includes(normalizedTag)) {
+      setTags([...tags, normalizedTag]);
+      setTagInput("");
     }
   };
 
-  const removeTag = (tag: string) => {
-    setTags(tags.filter(t => t !== tag));
+  const removeTag = (indexToRemove: number) => {
+    setTags(tags.filter((_, index) => index !== indexToRemove));
   };
 
-  const handleShare = async () => {
+  const handleShare = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!title.trim()) {
+      toast({
+        variant: "destructive",
+        description: "제목을 입력해주세요.",
+      });
+      return;
+    }
+
     try {
       setIsLoading(true);
-      setError('');
-      
-      if (!title.trim()) {
-        setError('제목을 입력해주세요.');
-        setIsLoading(false);
-        return;
-      }
-      
-      const shareData: IShareData = {
-        title,
-        description,
+      const response = await onShare(
+        imageId,
+        title.trim(),
+        description.trim(),
         tags,
         isPublic
-      };
-      
-      const result = await onShare(shareData);
-      setIsLoading(false);
-      
-      if (result.success) {
+      );
+
+      if (response.success) {
+        toast({
+          description: "커뮤니티에 성공적으로 공유되었습니다.",
+        });
         onClose();
       } else {
-        setError('공유 중 오류가 발생했습니다. 다시 시도해주세요.');
+        toast({
+          variant: "destructive",
+          description: response.error?.message || "공유에 실패했습니다.",
+        });
       }
-    } catch (err) {
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        description: "오류가 발생했습니다.",
+      });
+    } finally {
       setIsLoading(false);
-      setError('공유 중 오류가 발생했습니다. 다시 시도해주세요.');
-      console.error('Share error:', err);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-      <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-        {/* 헤더 */}
-        <div className="flex items-center justify-between mb-4">
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div
+        className="absolute inset-0 bg-transparent"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      <div className="bg-white rounded-lg shadow-xl max-w-md w-full max-h-[90vh] overflow-hidden relative z-10">
+        <div className="p-4 border-b flex justify-between items-center">
           <h2 className="text-xl font-semibold">커뮤니티에 공유하기</h2>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={onClose}
-            className="rounded-full p-2 hover:bg-gray-100"
+            className="rounded-full"
           >
-            <X size={20} />
-          </button>
+            <X className="h-5 w-5" />
+          </Button>
         </div>
-        
-        {/* 이미지 미리보기 */}
-        <div className="mb-4">
-          <img
-            src={imageURL}
-            alt="공유할 이미지"
-            className="w-full h-40 object-cover rounded-md"
-          />
-        </div>
-        
-        {/* 제목 입력 */}
-        <div className="mb-4">
-          <label className="block mb-1 font-medium text-sm">제목</label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="제목을 입력하세요"
-            className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-        
-        {/* 설명 입력 */}
-        <div className="mb-4">
-          <label className="block mb-1 font-medium text-sm">설명</label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="작품에 대한 설명을 입력하세요"
-            className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[80px]"
-          />
-        </div>
-        
-        {/* 태그 입력 */}
-        <div className="mb-4">
-          <label className="block mb-1 font-medium text-sm">태그</label>
-          <div className="flex items-center">
-            <input
-              type="text"
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={handleTagKeyDown}
-              onBlur={addTag}
-              placeholder="태그 입력 후 Enter 또는 쉼표 입력"
-              className="flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+
+        <div className="p-6 max-h-[calc(90vh-136px)] overflow-y-auto">
+          <div className="mb-4 border rounded-md p-2 flex justify-center">
+            <img
+              src={imageURL}
+              alt="공유할 이미지"
+              className="h-48 object-contain"
             />
           </div>
-          {tags.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-2">
-              {tags.map((tag) => (
-                <div
-                  key={tag}
-                  className="flex items-center bg-blue-100 text-blue-700 px-2 py-1 rounded-md"
-                >
-                  <span>#{tag}</span>
-                  <button
-                    onClick={() => removeTag(tag)}
-                    className="ml-1 text-blue-700 hover:text-blue-900"
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
-              ))}
+
+          <form onSubmit={handleShare} className="space-y-4">
+            <div className="space-y-2">
+              <label
+                htmlFor="title"
+                className="block text-sm font-medium text-gray-700"
+              >
+                제목 <span className="text-red-500">*</span>
+              </label>
+              <Input
+                id="title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="제목을 입력하세요"
+                maxLength={50}
+                required
+                disabled={isLoading}
+              />
             </div>
-          )}
-        </div>
-        
-        {/* 공개 설정 */}
-        <div className="mb-4">
-          <label className="block mb-1 font-medium text-sm">공개 설정</label>
-          <div className="flex items-center space-x-4">
-            <label className="flex items-center">
-              <input
-                type="radio"
-                checked={isPublic}
-                onChange={() => setIsPublic(true)}
-                className="mr-2"
+
+            <div className="space-y-2">
+              <label
+                htmlFor="description"
+                className="block text-sm font-medium text-gray-700"
+              >
+                설명
+              </label>
+              <Textarea
+                id="description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="이미지에 대한 설명을 입력하세요"
+                maxLength={200}
+                rows={3}
+                disabled={isLoading}
               />
-              전체 공개
-            </label>
-            <label className="flex items-center">
-              <input
-                type="radio"
-                checked={!isPublic}
-                onChange={() => setIsPublic(false)}
-                className="mr-2"
-              />
-              친구 공개
-            </label>
-          </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                태그
+              </label>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {tags.map((tag, index) => (
+                  <Badge key={index} variant="secondary" className="pl-2">
+                    {tag}
+                    <button
+                      type="button"
+                      onClick={() => removeTag(index)}
+                      className="ml-1 p-1 rounded-full hover:bg-gray-200"
+                      disabled={isLoading}
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+              </div>
+              <div className="flex">
+                <Input
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={handleTagInputKeyDown}
+                  placeholder="태그 입력 후 엔터 또는 쉼표"
+                  disabled={isLoading}
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="ml-2"
+                  onClick={() => tagInput.trim() && addTag(tagInput)}
+                  disabled={!tagInput.trim() || isLoading}
+                >
+                  추가
+                </Button>
+              </div>
+              <p className="text-xs text-gray-500">
+                쉼표(,) 또는 엔터 키를 눌러 태그를 추가할 수 있습니다.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                공개 설정
+              </label>
+              <div className="flex space-x-4">
+                <label className="inline-flex items-center">
+                  <input
+                    type="radio"
+                    className="form-radio"
+                    checked={isPublic}
+                    onChange={() => setIsPublic(true)}
+                    disabled={isLoading}
+                  />
+                  <span className="ml-2 text-sm">전체 공개</span>
+                </label>
+                <label className="inline-flex items-center">
+                  <input
+                    type="radio"
+                    className="form-radio"
+                    checked={!isPublic}
+                    onChange={() => setIsPublic(false)}
+                    disabled={isLoading}
+                  />
+                  <span className="ml-2 text-sm">친구 공개</span>
+                </label>
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={!title.trim() || isLoading}
+              >
+                {isLoading ? "공유 중..." : "공유하기"}
+                <Share2 className="ml-2 h-4 w-4" />
+              </Button>
+            </div>
+          </form>
         </div>
-        
-        {/* 오류 메시지 */}
-        {error && (
-          <div className="mb-4 text-red-500 text-sm">{error}</div>
-        )}
-        
-        {/* 공유 버튼 */}
-        <button
-          onClick={handleShare}
-          disabled={isLoading}
-          className="w-full py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-md font-medium transition-colors disabled:bg-blue-300"
-        >
-          {isLoading ? '공유 중...' : '공유하기'}
-        </button>
       </div>
     </div>
   );
-} 
+};
+
+export default ShareModal; 

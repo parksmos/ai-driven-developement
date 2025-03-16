@@ -46,7 +46,6 @@ export interface IGenerateImageRequest {
   style: IImageStyle;
 }
 
-<<<<<<< HEAD
 // API 응답 관련 타입
 export type TApiResponse<T> = {
   success: boolean;
@@ -68,12 +67,6 @@ export type TSaveToGalleryResponse = TApiResponse<{
 export type TShareToCommunityResponse = TApiResponse<{
   postId: string;
 }>;
-=======
-export interface IGenerateImageResponse {
-  success: boolean;
-  imageURL: string;
-}
->>>>>>> 31b4dfec3fcb29d55b01af2940803b199398bfcb
 
 // 공유 모달 관련 타입
 export interface IShareModalProps {
@@ -82,7 +75,6 @@ export interface IShareModalProps {
   imageURL: string;
   prompt: string;
   style: IImageStyle;
-<<<<<<< HEAD
   onShare: (data: IShareData) => Promise<TShareToCommunityResponse>;
 }
 
@@ -91,9 +83,6 @@ export interface IImageModalProps {
   isOpen: boolean;
   onClose: () => void;
   imageURL: string;
-=======
-  onShare: (data: IShareData) => Promise<void>;
->>>>>>> 31b4dfec3fcb29d55b01af2940803b199398bfcb
 }
 
 export interface IShareData {
@@ -101,13 +90,93 @@ export interface IShareData {
   description: string;
   tags: string[];
   isPublic: boolean;
-<<<<<<< HEAD
 }
 
 // 셀렉트 컴포넌트 관련 타입
 export interface ISelectOption {
   value: string;
   label: string;
-=======
->>>>>>> 31b4dfec3fcb29d55b01af2940803b199398bfcb
+}
+
+// 갤러리 관련 타입
+export interface IGalleryImage {
+  id: string;
+  imageURL: string;
+  thumbnailURL?: string;
+  name: string;
+  prompt: string;
+  style: IImageStyle;
+  createdAt: string;
+  tags: string[];
+  categories: string[];
+}
+
+export interface ICategory {
+  id: string;
+  name: string;
+  count: number;
+  isProtected?: boolean;
+}
+
+export interface ISortOption {
+  id: string;
+  label: string;
+}
+
+export interface IImageDetailModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  image: IGalleryImage;
+  categories: ICategory[];
+  onUpdateCategory: (categoryId: string, isAdd: boolean) => Promise<{
+    success: boolean;
+    error?: { message: string };
+  }>;
+  onUpdateTags: (tags: string[]) => Promise<{
+    success: boolean;
+    error?: { message: string };
+  }>;
+  onDelete: () => Promise<void>;
+  onShare: () => void;
+  onDownload: () => Promise<void>;
+}
+
+export interface ICategoryModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  categories: ICategory[];
+  onCategoryUpdate: (categories: ICategory[]) => void;
+}
+
+// 갤러리 목록 API 요청/응답 타입
+export interface IGalleryImagesRequest {
+  category?: string;
+  search?: string;
+  tags?: string[];
+  dateFrom?: string;
+  dateTo?: string;
+  sort?: 'newest' | 'oldest' | 'name_asc' | 'name_desc';
+  page?: number;
+  limit?: number;
+}
+
+export type TGalleryImagesResponse = TApiResponse<{
+  images: IGalleryImage[];
+  total: number;
+  page: number;
+  pageSize: number;
+}>;
+
+export type TCategoriesResponse = TApiResponse<{
+  categories: ICategory[];
+}>;
+
+// 일괄 관리 툴바 타입
+export interface IBulkToolbarProps {
+  selectedImages: string[];
+  categories: ICategory[];
+  onBulkMove: (imageIds: string[], categoryId: string) => Promise<boolean>;
+  onBulkAddTag: (imageIds: string[], tag: string) => Promise<boolean>;
+  onBulkDelete: (imageIds: string[]) => Promise<boolean>;
+  onClearSelection: () => void;
 } 
