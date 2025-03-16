@@ -1,4 +1,4 @@
-import { IPost, IComment } from "../types";
+import { IPost, IComment, IImageStyle, IShareData } from "../types";
 import { mockCommunityFeed } from "./mockData";
 
 // 목업 API - 커뮤니티 피드 가져오기
@@ -72,28 +72,180 @@ export async function fetchPostComments(postId: string): Promise<{ success: bool
   };
 }
 
-// 목업 API - 이미지 생성하기
-export async function generateImage(prompt: string): Promise<{ success: boolean, imageURL: string }> {
-  // 실제 API 호출을 시뮬레이션하기 위한 지연 추가
-  await new Promise(resolve => setTimeout(resolve, 1500));
+// 목업 API - 이미지 생성하기 (스타일 옵션을 포함한 업데이트 버전)
+export async function generateImage(prompt: string, style?: IImageStyle): Promise<{ success: boolean, imageURL: string }> {
+  // 기본 스타일 값 설정
+  const defaultStyle: IImageStyle = {
+    color: 'bright',
+    texture: 'smooth',
+    mood: 'warm',
+    intensity: 50
+  };
   
-  // 고정된 이미지 URL 목록
+  // style이 없을 경우 기본값 사용
+  const finalStyle = style || defaultStyle;
+  
+  // 실제 API 호출을 시뮬레이션하기 위한 지연 추가 (복잡한 스타일 옵션이 적용된 경우 더 오래 걸리는 것처럼 시뮬레이션)
+  const delay = 1500 + (finalStyle.intensity * 5);
+  await new Promise(resolve => setTimeout(resolve, delay));
+  
+  // 최소 글자 수 체크 (오류 시뮬레이션)
+  if (prompt.length < 10) {
+    return {
+      success: false,
+      imageURL: ''
+    };
+  }
+  
+  // 고정된 이미지 URL 목록 - 더 안정적인 URL 사용
   const imageURLs = [
-    "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=600&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=600&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1573096108468-702f6014ef28?w=600&h=600&fit=crop",
-    "https://images.unsplash.com/photo-1633109741715-6b7bb8a6cc65?w=600&h=600&fit=crop"
+    "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&h=600&q=80",
+    "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=600&h=600&q=80",
+    "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=600&h=600&q=80",
+    "https://images.unsplash.com/photo-1573096108468-702f6014ef28?w=600&h=600&q=80",
+    "https://images.unsplash.com/photo-1633109741715-6b7bb8a6cc65?w=600&h=600&q=80"
   ];
   
-  // 랜덤하게 이미지 선택
-  const randomIndex = Math.floor(Math.random() * imageURLs.length);
-  const imageURL = imageURLs[randomIndex];
+  // 추가 이미지 (확실하게 로드되는 것으로 확인된 이미지)
+  const fallbackImageURLs = [
+    "https://source.unsplash.com/random/600x600?art",
+    "https://source.unsplash.com/random/600x600?painting",
+    "https://source.unsplash.com/random/600x600?digital",
+    "https://picsum.photos/600/600",
+    "https://picsum.photos/id/237/600/600"
+  ];
+  
+  // 모든 이미지 URL을 하나의 배열로 합침
+  const allImageURLs = [...imageURLs, ...fallbackImageURLs];
+  
+  // 스타일에 따라 다른 이미지 선택 로직 구현
+  let imageIndex = 0;
+  
+  switch(finalStyle.color) {
+    case 'bright':
+      imageIndex = 0;
+      break;
+    case 'dark':
+      imageIndex = 1;
+      break;
+    case 'vivid':
+      imageIndex = 2;
+      break;
+    case 'pastel':
+      imageIndex = 3;
+      break;
+    case 'monochrome':
+      imageIndex = 4;
+      break;
+    default:
+      // 랜덤 선택
+      imageIndex = Math.floor(Math.random() * allImageURLs.length);
+  }
+  
+  // 간헐적 실패 시뮬레이션 (10% 확률) - 개발 테스트용
+  // 실제 서비스에서는 이 부분 제거
+  /* 
+  const shouldFail = Math.random() < 0.1;
+  if (shouldFail) {
+    return {
+      success: false,
+      imageURL: ''
+    };
+  }
+  */
   
   return {
     success: true,
-    imageURL
+    imageURL: allImageURLs[imageIndex]
   };
+}
+
+// 목업 API - 갤러리에 저장하기
+export async function saveToGallery(
+  imageURL: string, 
+  prompt: string, 
+  style?: IImageStyle
+): Promise<{ success: boolean, imageId: string }> {
+  // 기본 스타일 값 설정
+  const defaultStyle: IImageStyle = {
+    color: 'bright',
+    texture: 'smooth',
+    mood: 'warm',
+    intensity: 50
+  };
+  
+  // style이 없을 경우 기본값 사용
+  const finalStyle = style || defaultStyle;
+  
+  // 실제 API 호출을 시뮬레이션하기 위한 지연 추가
+  await new Promise(resolve => setTimeout(resolve, 500));
+  
+  // 가상의 이미지 ID 생성
+  const imageId = `img_${Date.now()}`;
+  
+  return {
+    success: true,
+    imageId
+  };
+}
+
+// 목업 API - 커뮤니티에 공유하기
+export async function shareToCommuity(
+  imageURL: string,
+  prompt: string,
+  style?: IImageStyle,
+  title: string,
+  description: string,
+  tags: string[],
+  isPublic: boolean
+): Promise<{ success: boolean, postId: string }> {
+  // 기본 스타일 값 설정
+  const defaultStyle: IImageStyle = {
+    color: 'bright',
+    texture: 'smooth',
+    mood: 'warm',
+    intensity: 50
+  };
+  
+  // style이 없을 경우 기본값 사용
+  const finalStyle = style || defaultStyle;
+  
+  // 실제 API 호출을 시뮬레이션하기 위한 지연 추가
+  await new Promise(resolve => setTimeout(resolve, 800));
+  
+  // 필수 필드 체크 (오류 시뮬레이션)
+  if (!title || title.trim() === '') {
+    return {
+      success: false,
+      postId: ''
+    };
+  }
+  
+  // 가상의 포스트 ID 생성
+  const postId = `post_${Date.now()}`;
+  
+  return {
+    success: true,
+    postId
+  };
+}
+
+// 기존 코드와 통합을 위한 래퍼 함수
+export async function handleShareToCommuity(
+  imageURL: string,
+  prompt: string,
+  style?: IImageStyle,
+  shareData: IShareData
+): Promise<{ success: boolean, postId: string }> {
+  return shareToCommuity(
+    imageURL,
+    prompt,
+    style,
+    shareData.title,
+    shareData.description,
+    shareData.tags,
+    shareData.isPublic
+  );
 }
 
 // 목업 API - 좋아요 토글
