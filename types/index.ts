@@ -20,4 +20,15 @@ export interface IComment {
   userProfile?: string;
   createdAt: string;
   parentId?: string;
+}
+
+export interface ICommunityFeedCardProps {
+  post: IPost;
+}
+
+export interface ICommentModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  post: IPost;
+  onAddComment: (content: string) => Promise<void>;
 } 

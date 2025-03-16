@@ -1,16 +1,12 @@
 import { useState, useCallback } from "react";
 import Link from "next/link";
-import { IPost } from "@/types";
+import { IPost, ICommunityFeedCardProps } from "@/types";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
 import { Heart, MessageCircle, Bookmark, ImageIcon } from "lucide-react";
 import CommentModal from "./CommentModal";
 import { toggleLike, toggleScrap, addComment } from "@/utils/api";
-
-interface ICommunityFeedCardProps {
-  post: IPost;
-}
 
 export default function CommunityFeedCard({ post: initialPost }: ICommunityFeedCardProps) {
   // 로컬 상태로 게시물 데이터 관리

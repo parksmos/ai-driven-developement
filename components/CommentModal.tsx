@@ -2,16 +2,9 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { X } from "lucide-react";
-import { IComment, IPost } from "@/types";
+import { IComment, IPost, ICommentModalProps } from "@/types";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
-
-interface ICommentModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  post: IPost;
-  onAddComment: (content: string) => Promise<void>;
-}
 
 export default function CommentModal({ isOpen, onClose, post, onAddComment }: ICommentModalProps) {
   const [comments, setComments] = useState<IComment[]>([]);
