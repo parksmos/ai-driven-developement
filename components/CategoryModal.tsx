@@ -7,7 +7,7 @@ import { X, Edit2, Trash2, Check, Plus } from "lucide-react";
 import { ICategoryModalProps } from "@/types";
 import { toast } from "@/components/ui/use-toast";
 
-const CategoryModal = ({
+export const CategoryModal = ({
   isOpen,
   onClose,
   categories,
@@ -272,6 +272,4 @@ const CategoryModal = ({
       </div>
     </div>
   );
-};
-
-export default CategoryModal; 
+}; 

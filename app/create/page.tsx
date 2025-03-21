@@ -430,9 +430,15 @@ export default function CreatePage() {
           <ShareModal 
             isOpen={isShareModalOpen}
             onClose={() => setIsShareModalOpen(false)}
-            imageURL={generatedImage}
-            prompt={prompt}
-            style={style}
+            image={{
+              id: 'temp-id', // 임시 ID
+              imageURL: generatedImage,
+              prompt: prompt,
+              style: style,
+              createdAt: new Date().toISOString(),
+              tags: [], // 빈 태그 배열 기본값 설정
+              categoryId: 'uncategorized',
+            }}
             onShare={handleShare}
           />
           

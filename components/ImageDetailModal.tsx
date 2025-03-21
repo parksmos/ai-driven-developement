@@ -8,14 +8,15 @@ import { Card } from "@/components/ui/card";
 import { X, Download, Share2, Trash2, Plus } from "lucide-react";
 import { IImageDetailModalProps } from "@/types";
 import { formatDate } from "@/utils/formatters";
-import { toast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 
 const ImageDetailModal = ({
   isOpen,
   onClose,
   image,
-  onAddTag,
-  onRemoveTag,
+  categories,
+  onUpdateCategory,
+  onUpdateTags,
   onDelete,
   onShare,
   onDownload,
@@ -26,6 +27,8 @@ const ImageDetailModal = ({
     download: false,
     delete: false,
     addTag: false,
+    removeTag: false,
+    category: false
   });
 
   if (!isOpen) return null;
@@ -36,23 +39,19 @@ const ImageDetailModal = ({
 
     try {
       setIsLoading((prev) => ({ ...prev, addTag: true }));
-      const success = await onAddTag(image.id, newTag.trim());
-      if (success) {
-        toast({
-          description: "태그가 추가되었습니다.",
-        });
+      // 기존 태그에 새 태그 추가
+      const updatedTags = [...new Set([...image.tags, newTag.trim()])]; // 중복 방지
+      const result = await onUpdateTags(image.id, updatedTags);
+      
+      if (result.success) {
+        toast.success("태그가 추가되었습니다.");
         setNewTag("");
       } else {
-        toast({
-          variant: "destructive",
-          description: "태그 추가에 실패했습니다.",
-        });
+        toast.error(result.error?.message || "태그 추가에 실패했습니다.");
       }
     } catch (error) {
-      toast({
-        variant: "destructive",
-        description: "오류가 발생했습니다.",
-      });
+      console.error("태그 추가 중 오류:", error);
+      toast.error("오류가 발생했습니다.");
     } finally {
       setIsLoading((prev) => ({ ...prev, addTag: false }));
     }
@@ -60,46 +59,58 @@ const ImageDetailModal = ({
 
   const handleRemoveTag = async (tag: string) => {
     try {
-      const success = await onRemoveTag(image.id, tag);
-      if (success) {
-        toast({
-          description: "태그가 삭제되었습니다.",
-        });
+      setIsLoading((prev) => ({ ...prev, removeTag: true }));
+      // 태그 제거
+      const updatedTags = image.tags.filter(t => t !== tag);
+      const result = await onUpdateTags(image.id, updatedTags);
+      
+      if (result.success) {
+        toast.success("태그가 삭제되었습니다.");
       } else {
-        toast({
-          variant: "destructive",
-          description: "태그 삭제에 실패했습니다.",
-        });
+        toast.error(result.error?.message || "태그 삭제에 실패했습니다.");
       }
     } catch (error) {
-      toast({
-        variant: "destructive",
-        description: "오류가 발생했습니다.",
-      });
+      console.error("태그 삭제 중 오류:", error);
+      toast.error("오류가 발생했습니다.");
+    } finally {
+      setIsLoading((prev) => ({ ...prev, removeTag: false }));
+    }
+  };
+
+  const handleCategoryToggle = async (categoryId: string, isAdding: boolean) => {
+    try {
+      setIsLoading((prev) => ({ ...prev, category: true }));
+      const result = await onUpdateCategory(image.id, categoryId, isAdding);
+      
+      if (result.success) {
+        toast.success(isAdding ? "카테고리가 추가되었습니다." : "카테고리가 제거되었습니다.");
+      } else {
+        toast.error(result.error?.message || "카테고리 변경에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("카테고리 변경 중 오류:", error);
+      toast.error("오류가 발생했습니다.");
+    } finally {
+      setIsLoading((prev) => ({ ...prev, category: false }));
     }
   };
 
   const handleDeleteImage = async () => {
     try {
       setIsLoading((prev) => ({ ...prev, delete: true }));
-      const success = await onDelete(image.id);
-      if (success) {
-        toast({
-          description: "이미지가 삭제되었습니다.",
-        });
+      const result = await onDelete(image.id);
+      
+      if (result.success) {
+        toast.success("이미지가 삭제되었습니다.");
+        setIsDeleteConfirmOpen(false);
         onClose();
       } else {
-        toast({
-          variant: "destructive",
-          description: "이미지 삭제에 실패했습니다.",
-        });
+        toast.error(result.error?.message || "이미지 삭제에 실패했습니다.");
+        setIsDeleteConfirmOpen(false);
       }
     } catch (error) {
-      toast({
-        variant: "destructive",
-        description: "오류가 발생했습니다.",
-      });
-    } finally {
+      console.error("이미지 삭제 중 오류:", error);
+      toast.error("이미지 삭제 중 오류가 발생했습니다.");
       setIsLoading((prev) => ({ ...prev, delete: false }));
       setIsDeleteConfirmOpen(false);
     }
@@ -108,25 +119,22 @@ const ImageDetailModal = ({
   const handleDownload = async () => {
     try {
       setIsLoading((prev) => ({ ...prev, download: true }));
-      const success = await onDownload(image.imageURL);
-      if (success) {
-        toast({
-          description: "이미지가 다운로드되었습니다.",
-        });
-      } else {
-        toast({
-          variant: "destructive",
-          description: "이미지 다운로드에 실패했습니다.",
-        });
-      }
+      await onDownload(image.id);
+      // 성공 메시지는 onDownload 내에서 처리됨
     } catch (error) {
-      toast({
-        variant: "destructive",
-        description: "오류가 발생했습니다.",
-      });
+      console.error("이미지 다운로드 중 오류:", error);
+      toast.error("이미지 다운로드 중 오류가 발생했습니다.");
     } finally {
       setIsLoading((prev) => ({ ...prev, download: false }));
     }
+  };
+
+  // 카테고리 관리 부분을 추가
+  const getImageCategories = () => {
+    return image.categories.map(categoryId => {
+      const category = categories.find(c => c.id === categoryId);
+      return category ? category.name : '미분류';
+    }).join(', ');
   };
 
   return (
@@ -138,7 +146,7 @@ const ImageDetailModal = ({
       />
       <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden relative z-10">
         <div className="p-4 border-b flex justify-between items-center">
-          <h2 className="text-xl font-semibold">이미지 상세 정보</h2>
+          <h2 className="text-xl font-semibold">{image.name}</h2>
           <Button
             variant="ghost"
             size="icon"
@@ -154,7 +162,7 @@ const ImageDetailModal = ({
             <div className="rounded-md overflow-hidden border border-gray-200">
               <img
                 src={image.imageURL}
-                alt={image.prompt}
+                alt={image.name}
                 className="w-full h-auto object-contain"
               />
             </div>
@@ -172,7 +180,7 @@ const ImageDetailModal = ({
               <Button
                 variant="default"
                 className="flex-1"
-                onClick={() => onShare(image.id)}
+                onClick={onShare}
               >
                 커뮤니티 공유
                 <Share2 className="ml-2 h-4 w-4" />
@@ -228,6 +236,30 @@ const ImageDetailModal = ({
             </Card>
 
             <Card className="p-4">
+              <h3 className="font-medium text-sm text-gray-500 mb-2">
+                카테고리
+              </h3>
+              <p className="text-sm mb-2">{getImageCategories() || '미분류'}</p>
+              <div className="flex flex-wrap gap-2">
+                {categories
+                  .filter(category => !category.isProtected)
+                  .map(category => {
+                    const isSelected = image.categories.includes(category.id);
+                    return (
+                      <Badge 
+                        key={category.id} 
+                        variant={isSelected ? "default" : "outline"}
+                        className={`cursor-pointer ${isLoading.category ? 'opacity-50' : ''}`}
+                        onClick={() => handleCategoryToggle(category.id, !isSelected)}
+                      >
+                        {category.name}
+                      </Badge>
+                    );
+                  })}
+              </div>
+            </Card>
+
+            <Card className="p-4">
               <h3 className="font-medium text-sm text-gray-500 mb-2">태그</h3>
               <div className="flex flex-wrap gap-2 mb-4">
                 {image.tags.map((tag) => (
@@ -236,6 +268,7 @@ const ImageDetailModal = ({
                     <button
                       onClick={() => handleRemoveTag(tag)}
                       className="ml-1 p-1 rounded-full hover:bg-gray-200"
+                      disabled={isLoading.removeTag}
                     >
                       <X className="h-3 w-3" />
                     </button>

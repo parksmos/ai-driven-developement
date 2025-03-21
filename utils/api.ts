@@ -85,11 +85,7 @@ export async function generateImage(prompt: string, style?: IImageStyle): Promis
   // style이 없을 경우 기본값 사용
   const finalStyle = style || defaultStyle;
   
-  // 실제 API 호출을 시뮬레이션하기 위한 지연 추가 (복잡한 스타일 옵션이 적용된 경우 더 오래 걸리는 것처럼 시뮬레이션)
-  const delay = 1500 + (finalStyle.intensity * 5);
-  await new Promise(resolve => setTimeout(resolve, delay));
-  
-  // 최소 글자 수 체크 (오류 시뮬레이션)
+  // 최소 글자 수 체크
   if (prompt.length < 10) {
     return {
       success: false,
@@ -99,28 +95,86 @@ export async function generateImage(prompt: string, style?: IImageStyle): Promis
       }
     };
   }
-  
-  // 고정된 이미지 URL 목록 - 더 안정적인 URL 사용
-  const imageURLs = [
-    "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&h=600&q=80",
-    "https://images.unsplash.com/photo-1513151233558-d860c5398176?w=600&h=600&q=80",
-    "https://images.unsplash.com/photo-1534447677768-be436bb09401?w=600&h=600&q=80",
-    "https://images.unsplash.com/photo-1573096108468-702f6014ef28?w=600&h=600&q=80",
-    "https://images.unsplash.com/photo-1633109741715-6b7bb8a6cc65?w=600&h=600&q=80",
-    "https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=600&h=600&q=80",
-    "https://images.unsplash.com/photo-1493238792000-8113da705763?w=600&h=600&q=80",
-    "https://images.unsplash.com/photo-1680733250332-c9b2000b3ce6?w=600&h=600&q=80",
-    "https://images.unsplash.com/photo-1689516584760-260eb99fa6a9?w=600&h=600&q=80",
-    "https://images.unsplash.com/photo-1638803040283-7a5ffd48dad5?w=600&h=600&q=80"
-  ];
-  
-  // 랜덤 선택
-  const imageIndex = Math.floor(Math.random() * imageURLs.length);
-  
-  return {
-    success: true,
-    imageURL: imageURLs[imageIndex]
-  };
+
+  try {
+    console.log('Replicate API 요청 시작:', { prompt, style: finalStyle });
+    
+    // 예측 생성 API 호출
+    const prediction = await fetch('/api/predictions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ prompt, style: finalStyle }),
+    });
+    
+    const result = await prediction.json();
+    console.log('예측 생성 결과:', result);
+    
+    if (!prediction.ok || !result.success) {
+      throw new Error(result.error?.message || '이미지 생성에 실패했습니다.');
+    }
+    
+    // 폴링을 통한 예측 결과 가져오기
+    const predictionId = result.prediction.id;
+    if (!predictionId) {
+      throw new Error('예측 ID를 받지 못했습니다.');
+    }
+    
+    // 폴링 함수
+    const pollPrediction = async (id: string, maxAttempts = 60, interval = 2000): Promise<string> => {
+      let attempts = 0;
+      
+      while (attempts < maxAttempts) {
+        const pollResponse = await fetch(`/api/predictions/${id}`);
+        const pollResult = await pollResponse.json();
+        
+        console.log(`폴링 결과 (${attempts + 1}/${maxAttempts}):`, pollResult.prediction.status);
+        
+        if (pollResult.success && pollResult.data?.imageURL) {
+          return pollResult.data.imageURL;
+        }
+        
+        if (pollResult.prediction.status === 'failed') {
+          throw new Error(pollResult.error?.message || '이미지 생성에 실패했습니다.');
+        }
+        
+        if (pollResult.prediction.status === 'succeeded') {
+          // 출력 처리
+          if (pollResult.prediction.output) {
+            if (Array.isArray(pollResult.prediction.output)) {
+              return pollResult.prediction.output[pollResult.prediction.output.length - 1];
+            } else if (typeof pollResult.prediction.output === 'string') {
+              return pollResult.prediction.output;
+            }
+          }
+        }
+        
+        // 다음 폴링까지 대기
+        await new Promise(resolve => setTimeout(resolve, interval));
+        attempts++;
+      }
+      
+      throw new Error('이미지 생성 시간이 초과되었습니다.');
+    };
+    
+    // 결과 폴링
+    const imageURL = await pollPrediction(predictionId);
+    
+    return {
+      success: true,
+      imageURL
+    };
+  } catch (error: any) {
+    console.error('이미지 생성 오류:', error);
+    return {
+      success: false,
+      imageURL: '',
+      error: {
+        message: error.message || '이미지 생성 중 오류가 발생했습니다.'
+      }
+    };
+  }
 }
 
 // 목업 API - 갤러리에 저장하기
@@ -294,180 +348,358 @@ export async function addComment(postId: string, content: string): Promise<{ suc
 
 // 갤러리 관련 API 함수
 
-// 갤러리 이미지 목록 가져오기
-export async function getGalleryImages(): Promise<IGalleryImage[]> {
+// 목업 API - 갤러리 이미지 목록 가져오기
+export async function getGalleryImages(options: { 
+  category?: string, 
+  search?: string, 
+  tags?: string[],
+  sort?: string,
+  dateFrom?: string,
+  dateTo?: string
+} = {}): Promise<IGalleryImage[]> {
   // 실제 API 호출을 시뮬레이션하기 위한 지연 추가
-  await new Promise(resolve => setTimeout(resolve, 800));
+  await new Promise(resolve => setTimeout(resolve, 600));
   
-  return [...mockGalleryImages];
+  // 목업 데이터에서 이미지 반환
+  let result = [...mockGalleryImages];
+  
+  // 필터링 (카테고리)
+  if (options.category && options.category !== 'all') {
+    result = result.filter(img => 
+      options.category === 'uncategorized' 
+        ? img.categories.length === 0 || img.categories.includes('uncategorized')
+        : img.categories.includes(options.category)
+    );
+  }
+  
+  // 필터링 (검색어)
+  if (options.search) {
+    const searchLower = options.search.toLowerCase();
+    result = result.filter(img => 
+      img.name.toLowerCase().includes(searchLower) || 
+      img.prompt.toLowerCase().includes(searchLower) ||
+      img.tags.some(tag => tag.toLowerCase().includes(searchLower))
+    );
+  }
+  
+  // 필터링 (태그)
+  if (options.tags && options.tags.length > 0) {
+    result = result.filter(img => 
+      options.tags!.some(tag => img.tags.includes(tag))
+    );
+  }
+  
+  // 필터링 (날짜)
+  if (options.dateFrom || options.dateTo) {
+    result = result.filter(img => {
+      const imgDate = new Date(img.createdAt).getTime();
+      
+      if (options.dateFrom && options.dateTo) {
+        const fromDate = new Date(options.dateFrom).getTime();
+        const toDate = new Date(options.dateTo).setHours(23, 59, 59, 999); // 종료일의 23:59:59로 설정
+        return imgDate >= fromDate && imgDate <= toDate;
+      }
+      else if (options.dateFrom) {
+        const fromDate = new Date(options.dateFrom).getTime();
+        return imgDate >= fromDate;
+      }
+      else if (options.dateTo) {
+        const toDate = new Date(options.dateTo).setHours(23, 59, 59, 999);
+        return imgDate <= toDate;
+      }
+      
+      return true;
+    });
+  }
+  
+  // 정렬
+  if (options.sort) {
+    switch(options.sort) {
+      case 'newest':
+        result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        break;
+      case 'oldest':
+        result.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        break;
+      case 'a-z':
+        result.sort((a, b) => a.name.localeCompare(b.name));
+        break;
+      case 'z-a':
+        result.sort((a, b) => b.name.localeCompare(a.name));
+        break;
+    }
+  }
+  
+  return result;
 }
 
-// 카테고리 목록 가져오기
+// 목업 API - 카테고리 목록 가져오기
 export async function getCategories(): Promise<ICategory[]> {
   // 실제 API 호출을 시뮬레이션하기 위한 지연 추가
-  await new Promise(resolve => setTimeout(resolve, 500));
+  await new Promise(resolve => setTimeout(resolve, 400));
   
+  // 목업 카테고리 데이터 반환
   return [...mockCategories];
 }
 
-// 이미지를 카테고리에 추가
-export async function addImageToCategory(imageId: string, categoryId: string): Promise<{ success: boolean }> {
+// 목업 API - 이미지 카테고리에 추가
+export async function addImageToCategory(imageId: string, categoryId: string): Promise<{
+  success: boolean
+}> {
+  // 실제 API 호출을 시뮬레이션하기 위한 지연 추가
+  await new Promise(resolve => setTimeout(resolve, 400));
+  
+  // 목업 데이터에서 이미지 찾기
+  const imageIndex = mockGalleryImages.findIndex(img => img.id === imageId);
+  
+  if (imageIndex === -1) {
+    return { success: false };
+  }
+  
+  // 이미지가 이미 해당 카테고리에 있는지 확인
+  if (mockGalleryImages[imageIndex].categories.includes(categoryId)) {
+    return { success: true }; // 이미 카테고리에 속해 있으면 성공으로 처리
+  }
+  
+  // 카테고리 추가
+  mockGalleryImages[imageIndex].categories.push(categoryId);
+  
+  return { success: true };
+}
+
+// 목업 API - 이미지 카테고리에서 제거
+export async function removeImageFromCategory(imageId: string, categoryId: string): Promise<{
+  success: boolean
+}> {
+  // 실제 API 호출을 시뮬레이션하기 위한 지연 추가
+  await new Promise(resolve => setTimeout(resolve, 400));
+  
+  // 목업 데이터에서 이미지 찾기
+  const imageIndex = mockGalleryImages.findIndex(img => img.id === imageId);
+  
+  if (imageIndex === -1) {
+    return { success: false };
+  }
+  
+  // 이미지가 해당 카테고리에 없는지 확인
+  if (!mockGalleryImages[imageIndex].categories.includes(categoryId)) {
+    return { success: true }; // 이미 카테고리에 속해 있지 않으면 성공으로 처리
+  }
+  
+  // 카테고리 제거
+  mockGalleryImages[imageIndex].categories = 
+    mockGalleryImages[imageIndex].categories.filter(id => id !== categoryId);
+  
+  return { success: true };
+}
+
+// 목업 API - 이미지에 태그 추가
+export async function addImageTag(imageId: string, tag: string): Promise<{
+  success: boolean
+}> {
   // 실제 API 호출을 시뮬레이션하기 위한 지연 추가
   await new Promise(resolve => setTimeout(resolve, 300));
   
-  try {
-    const imageIndex = mockGalleryImages.findIndex(img => img.id === imageId);
-    if (imageIndex === -1) {
-      return { success: false };
-    }
-    
-    if (!mockGalleryImages[imageIndex].categories.includes(categoryId)) {
-      mockGalleryImages[imageIndex].categories.push(categoryId);
-    }
-    
-    return { success: true };
-  } catch (error) {
-    console.error("카테고리 추가 중 오류 발생:", error);
+  // 목업 데이터에서 이미지 찾기
+  const imageIndex = mockGalleryImages.findIndex(img => img.id === imageId);
+  
+  if (imageIndex === -1) {
     return { success: false };
   }
+  
+  // 이미지가 이미 해당 태그를 가지고 있는지 확인
+  if (mockGalleryImages[imageIndex].tags.includes(tag)) {
+    return { success: true }; // 이미 태그가 있으면 성공으로 처리
+  }
+  
+  // 태그 추가
+  mockGalleryImages[imageIndex].tags.push(tag);
+  
+  return { success: true };
 }
 
-// 이미지를 카테고리에서 제거
-export async function removeImageFromCategory(imageId: string, categoryId: string): Promise<{ success: boolean }> {
+// 목업 API - 이미지에서 태그 제거
+export async function removeImageTag(imageId: string, tag: string): Promise<{
+  success: boolean
+}> {
   // 실제 API 호출을 시뮬레이션하기 위한 지연 추가
   await new Promise(resolve => setTimeout(resolve, 300));
   
-  try {
-    const imageIndex = mockGalleryImages.findIndex(img => img.id === imageId);
-    if (imageIndex === -1) {
-      return { success: false };
-    }
-    
-    mockGalleryImages[imageIndex].categories = mockGalleryImages[imageIndex].categories.filter(id => id !== categoryId);
-    
-    // 카테고리가 없으면 기본적으로 'uncategorized'에 추가
-    if (mockGalleryImages[imageIndex].categories.length === 0) {
-      mockGalleryImages[imageIndex].categories.push('uncategorized');
-    }
-    
-    return { success: true };
-  } catch (error) {
-    console.error("카테고리 제거 중 오류 발생:", error);
+  // 목업 데이터에서 이미지 찾기
+  const imageIndex = mockGalleryImages.findIndex(img => img.id === imageId);
+  
+  if (imageIndex === -1) {
     return { success: false };
   }
+  
+  // 태그 제거
+  mockGalleryImages[imageIndex].tags = 
+    mockGalleryImages[imageIndex].tags.filter(t => t !== tag);
+  
+  return { success: true };
 }
 
-// 갤러리 이미지 삭제
-export async function deleteGalleryImage(imageId: string): Promise<{ success: boolean, error?: { message: string } }> {
+// 목업 API - 갤러리 이미지 삭제
+export async function deleteGalleryImage(imageId: string): Promise<{
+  success: boolean,
+  error?: { message: string }
+}> {
   // 실제 API 호출을 시뮬레이션하기 위한 지연 추가
-  await new Promise(resolve => setTimeout(resolve, 700));
+  await new Promise(resolve => setTimeout(resolve, 500));
   
-  try {
-    const imageIndex = mockGalleryImages.findIndex(img => img.id === imageId);
-    if (imageIndex === -1) {
-      return { 
-        success: false,
-        error: { message: "이미지를 찾을 수 없습니다." }
-      };
-    }
-    
-    // 실제로는 서버에서 처리되어야 할 로직 (목업에서는 로컬 상태만 변경)
-    mockGalleryImages.splice(imageIndex, 1);
-    
-    return { success: true };
-  } catch (error) {
-    console.error("이미지 삭제 중 오류 발생:", error);
+  // 목업 데이터에서 이미지 찾기
+  const imageIndex = mockGalleryImages.findIndex(img => img.id === imageId);
+  
+  if (imageIndex === -1) {
     return { 
       success: false,
-      error: { message: "이미지 삭제 중 오류가 발생했습니다." }
+      error: { message: '이미지를 찾을 수 없습니다.' }
+    };
+  }
+  
+  // 이미지 삭제 (실제 목업 데이터 변경은 하지 않음, 클라이언트 상태 관리를 통해 처리)
+  
+  return { success: true };
+}
+
+// 목업 API - 여러 이미지에 태그 일괄 추가
+export async function bulkAddImageTags(imageIds: string[], tag: string): Promise<{
+  success: boolean,
+  updatedCount: number,
+  error?: { message: string }
+}> {
+  // 실제 API 호출을 시뮬레이션하기 위한 지연 추가
+  await new Promise(resolve => setTimeout(resolve, 800));
+  
+  try {
+    let updatedCount = 0;
+    
+    // 각 이미지에 태그 추가
+    for (const imageId of imageIds) {
+      const imageIndex = mockGalleryImages.findIndex(img => img.id === imageId);
+      
+      if (imageIndex !== -1 && !mockGalleryImages[imageIndex].tags.includes(tag)) {
+        mockGalleryImages[imageIndex].tags.push(tag);
+        updatedCount++;
+      }
+    }
+    
+    return {
+      success: true,
+      updatedCount
+    };
+  } catch (error) {
+    return {
+      success: false,
+      updatedCount: 0,
+      error: { message: '태그 일괄 추가 중 오류가 발생했습니다.' }
     };
   }
 }
 
-// 이미지 다운로드
-export async function downloadImage(imageId: string): Promise<void> {
+// 목업 API - 여러 이미지 카테고리 일괄 이동
+export async function bulkMoveToCategory(imageIds: string[], categoryId: string): Promise<{
+  success: boolean,
+  updatedCount: number,
+  error?: { message: string }
+}> {
   // 실제 API 호출을 시뮬레이션하기 위한 지연 추가
-  await new Promise(resolve => setTimeout(resolve, 500));
+  await new Promise(resolve => setTimeout(resolve, 1000));
   
-  const image = mockGalleryImages.find(img => img.id === imageId);
-  if (!image) {
-    throw new Error("이미지를 찾을 수 없습니다.");
+  try {
+    let updatedCount = 0;
+    
+    // 각 이미지를 카테고리로 이동
+    for (const imageId of imageIds) {
+      const imageIndex = mockGalleryImages.findIndex(img => img.id === imageId);
+      
+      if (imageIndex !== -1 && !mockGalleryImages[imageIndex].categories.includes(categoryId)) {
+        mockGalleryImages[imageIndex].categories.push(categoryId);
+        updatedCount++;
+      }
+    }
+    
+    return {
+      success: true,
+      updatedCount
+    };
+  } catch (error) {
+    return {
+      success: false,
+      updatedCount: 0,
+      error: { message: '카테고리 일괄 이동 중 오류가 발생했습니다.' }
+    };
   }
-  
-  // 실제로는 이미지 다운로드 로직이 들어가야 함
-  // 목업이므로 console.log만 남김
-  console.log(`Image ${imageId} downloaded: ${image.imageURL}`);
 }
 
-// 커뮤니티에 공유하기
+// 목업 API - 여러 이미지 일괄 삭제
+export async function bulkDeleteImages(imageIds: string[]): Promise<{
+  success: boolean,
+  deletedCount: number,
+  error?: { message: string }
+}> {
+  // 실제 API 호출을 시뮬레이션하기 위한 지연 추가
+  await new Promise(resolve => setTimeout(resolve, 1200));
+  
+  try {
+    // 삭제할 이미지 확인 (목업 데이터 실제 삭제는 하지 않음)
+    const deletedCount = imageIds.filter(id => 
+      mockGalleryImages.some(img => img.id === id)
+    ).length;
+    
+    return {
+      success: true,
+      deletedCount
+    };
+  } catch (error) {
+    return {
+      success: false,
+      deletedCount: 0,
+      error: { message: '이미지 일괄 삭제 중 오류가 발생했습니다.' }
+    };
+  }
+}
+
+// 목업 API - 커뮤니티에 이미지 공유하기
 export async function shareToCommunity(
   imageId: string,
   title: string,
   description: string,
   tags: string[],
   isPublic: boolean
-): Promise<TShareToCommunityResponse> {
+): Promise<{ 
+  success: boolean, 
+  postId?: string,
+  error?: { message: string } 
+}> {
   // 실제 API 호출을 시뮬레이션하기 위한 지연 추가
   await new Promise(resolve => setTimeout(resolve, 800));
   
-  try {
-    const image = mockGalleryImages.find(img => img.id === imageId);
-    if (!image) {
-      return { 
-        success: false,
-        error: { 
-          code: "IMAGE_NOT_FOUND",
-          message: "이미지를 찾을 수 없습니다." 
-        }
-      };
-    }
-    
-    if (!title || title.trim() === '') {
-      return { 
-        success: false,
-        error: { 
-          code: "INVALID_TITLE",
-          message: "제목은 필수 입력 사항입니다." 
-        }
-      };
-    }
-    
-    // 가상의 포스트 ID 생성
-    const postId = `post_${Date.now()}`;
-    
-    // 실제로는 서버에서 처리되어야 할 로직
-    const newPost: IPost = {
-      postId,
-      imageURL: image.imageURL,
-      userName: "현재 사용자", // 실제로는 로그인된 사용자 정보
-      userProfile: "https://api.dicebear.com/7.x/adventurer/svg?seed=User",
-      createdAt: new Date().toISOString(),
-      prompt: image.prompt,
-      styleOptions: image.style,
-      likes: 0,
-      comments: 0,
-      scraps: 0,
-      isLiked: false,
-      isScrapped: false
-    };
-    
-    // 실제로는 서버에 새 포스트 저장
-    mockCommunityFeed.unshift(newPost);
-    
-    return { 
-      success: true,
-      data: { postId }
-    };
-  } catch (error) {
-    console.error("커뮤니티 공유 중 오류 발생:", error);
-    return { 
+  // 제목 유효성 검사
+  if (!title.trim()) {
+    return {
       success: false,
-      error: { 
-        code: "SHARE_ERROR",
-        message: "공유 중 오류가 발생했습니다." 
-      }
+      error: { message: '제목을 입력해주세요.' }
     };
   }
+  
+  // 목업 데이터에서 이미지 찾기
+  const image = mockGalleryImages.find(img => img.id === imageId);
+  
+  if (!image) {
+    return {
+      success: false,
+      error: { message: '이미지를 찾을 수 없습니다.' }
+    };
+  }
+  
+  // 포스트 ID 생성
+  const postId = `post_${Date.now()}`;
+  
+  return {
+    success: true,
+    postId
+  };
 }
 
 // 카테고리 생성

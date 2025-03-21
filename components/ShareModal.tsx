@@ -6,35 +6,43 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { X, Share2 } from "lucide-react";
-import { TShareToCommunityResponse } from "@/types";
-import { toast } from "@/components/ui/use-toast";
+import { IGalleryImage, IImageStyle, TShareToCommunityResponse } from "@/types";
+import { toast } from "sonner";
 
 interface ShareModalProps {
   isOpen: boolean;
   onClose: () => void;
-  imageId: string;
-  imageURL: string;
-  initialTags?: string[];
+  image?: IGalleryImage;
+  imageURL?: string;
+  prompt?: string;
+  style?: IImageStyle;
   onShare: (
     imageId: string,
     title: string,
     description: string,
     tags: string[],
     isPublic: boolean
-  ) => Promise<TShareToCommunityResponse>;
+  ) => Promise<boolean> | Promise<TShareToCommunityResponse>;
 }
 
 const ShareModal = ({
   isOpen,
   onClose,
-  imageId,
+  image,
   imageURL,
-  initialTags = [],
+  prompt,
+  style,
   onShare,
 }: ShareModalProps) => {
+  const imageData = {
+    id: image?.id || 'temp-id',
+    imageURL: image?.imageURL || imageURL || '',
+    tags: image?.tags || [],
+  };
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [tags, setTags] = useState<string[]>(initialTags);
+  const [tags, setTags] = useState<string[]>(imageData.tags);
   const [tagInput, setTagInput] = useState("");
   const [isPublic, setIsPublic] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
@@ -49,10 +57,8 @@ const ShareModal = ({
   };
 
   const addTag = (tag: string) => {
-    // 중복 태그 제거 및 공백 제거 후 추가
-    const normalizedTag = tag.trim().toLowerCase();
-    if (normalizedTag && !tags.includes(normalizedTag)) {
-      setTags([...tags, normalizedTag]);
+    if (tag && !tags.includes(tag)) {
+      setTags([...tags, tag]);
       setTagInput("");
     }
   };
@@ -63,41 +69,32 @@ const ShareModal = ({
 
   const handleShare = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!title.trim()) {
-      toast({
-        variant: "destructive",
-        description: "제목을 입력해주세요.",
-      });
+      toast.error("제목을 입력해주세요.");
       return;
     }
 
     try {
       setIsLoading(true);
-      const response = await onShare(
-        imageId,
-        title.trim(),
-        description.trim(),
+      const result = await onShare(
+        imageData.id,
+        title,
+        description,
         tags,
         isPublic
       );
+      
+      const success = typeof result === 'boolean' ? result : result.success;
 
-      if (response.success) {
-        toast({
-          description: "커뮤니티에 성공적으로 공유되었습니다.",
-        });
+      if (success) {
+        toast.success("이미지가 커뮤니티에 공유되었습니다.");
         onClose();
       } else {
-        toast({
-          variant: "destructive",
-          description: response.error?.message || "공유에 실패했습니다.",
-        });
+        toast.error("공유 중 오류가 발생했습니다.");
       }
     } catch (error) {
-      toast({
-        variant: "destructive",
-        description: "오류가 발생했습니다.",
-      });
+      console.error("공유 중 오류 발생:", error);
+      toast.error("공유 중 오류가 발생했습니다.");
     } finally {
       setIsLoading(false);
     }
@@ -126,7 +123,7 @@ const ShareModal = ({
         <div className="p-6 max-h-[calc(90vh-136px)] overflow-y-auto">
           <div className="mb-4 border rounded-md p-2 flex justify-center">
             <img
-              src={imageURL}
+              src={imageData.imageURL}
               alt="공유할 이미지"
               className="h-48 object-contain"
             />
