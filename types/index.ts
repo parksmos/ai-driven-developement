@@ -35,6 +35,7 @@ export interface ICommentModalProps {
 
 // 이미지 생성 관련 타입
 export interface IImageStyle {
+  styleType: string; // 스타일 타입 (일반, 로고 등)
   color: string;
   texture: string;
   mood: string;

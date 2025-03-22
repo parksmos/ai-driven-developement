@@ -4,11 +4,18 @@ import { IPost, ICommunityFeedCardProps } from "@/types";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { formatDistanceToNow } from "date-fns";
 import { ko } from "date-fns/locale";
-import { Heart, MessageCircle, Bookmark, ImageIcon } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, ImageIcon, LogIn } from "lucide-react";
 import CommentModal from "./CommentModal";
 import { toggleLike, toggleScrap, addComment } from "@/utils/api";
+import { useAuth } from "@clerk/nextjs";
+import { toast } from "@/components/ui/use-toast";
+import { SignInButton } from "@clerk/nextjs";
+import { Button } from "@/components/ui/button";
 
 export default function CommunityFeedCard({ post: initialPost }: ICommunityFeedCardProps) {
+  // Clerk 인증 상태 가져오기
+  const { isLoaded, isSignedIn } = useAuth();
+  
   // 로컬 상태로 게시물 데이터 관리
   const [post, setPost] = useState<IPost>(initialPost);
   const [isLikeLoading, setIsLikeLoading] = useState(false);
@@ -16,6 +23,7 @@ export default function CommunityFeedCard({ post: initialPost }: ICommunityFeedC
   const [isCommentModalOpen, setIsCommentModalOpen] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
   const {
     postId,
@@ -29,12 +37,29 @@ export default function CommunityFeedCard({ post: initialPost }: ICommunityFeedC
     isScrapped
   } = post;
 
-  // 좋아요 토글 처리
-  const handleLikeToggle = async (e: React.MouseEvent) => {
+  // 로그인 체크 함수
+  const checkLoginStatus = (e: React.MouseEvent) => {
     e.preventDefault(); // Link의 기본 동작 방지
     e.stopPropagation(); // 이벤트 버블링 방지
     
-    if (isLikeLoading) return;
+    if (!isLoaded) return false; // 로딩 중이면 처리하지 않음
+    
+    if (!isSignedIn) {
+      // 로그인이 필요하다는 메시지 표시
+      toast({
+        title: "로그인이 필요합니다",
+        description: "이 기능을 사용하려면 로그인이 필요합니다.",
+        duration: 3000,
+      });
+      return false;
+    }
+    
+    return true;
+  };
+
+  // 좋아요 토글 처리
+  const handleLikeToggle = async (e: React.MouseEvent) => {
+    if (!checkLoginStatus(e) || isLikeLoading) return;
     
     setIsLikeLoading(true);
     try {
@@ -55,10 +80,7 @@ export default function CommunityFeedCard({ post: initialPost }: ICommunityFeedC
   
   // 스크랩 토글 처리
   const handleScrapToggle = async (e: React.MouseEvent) => {
-    e.preventDefault(); // Link의 기본 동작 방지
-    e.stopPropagation(); // 이벤트 버블링 방지
-    
-    if (isScrapLoading) return;
+    if (!checkLoginStatus(e) || isScrapLoading) return;
     
     setIsScrapLoading(true);
     try {
@@ -79,8 +101,8 @@ export default function CommunityFeedCard({ post: initialPost }: ICommunityFeedC
   
   // 댓글 모달 열기
   const handleOpenCommentModal = (e: React.MouseEvent) => {
-    e.preventDefault(); // Link의 기본 동작 방지
-    e.stopPropagation(); // 이벤트 버블링 방지
+    if (!checkLoginStatus(e)) return;
+    
     setIsCommentModalOpen(true);
   };
   
@@ -101,16 +123,36 @@ export default function CommunityFeedCard({ post: initialPost }: ICommunityFeedC
     }
   }, [postId]);
 
+  // 포스트 상세 페이지로 이동 처리
+  const handleCardClick = (e: React.MouseEvent) => {
+    // 카드 클릭 시 기본 동작 유지 (링크 이동)
+  };
+
   // 날짜 포맷팅
   const formattedDate = formatDistanceToNow(new Date(createdAt), {
     addSuffix: true,
     locale: ko
   });
 
+  // 로그인 상태에 따른 좋아요/스크랩 상태 표시
+  const renderLikeStatus = () => {
+    if (!isSignedIn) {
+      return false; // 로그인되지 않은 상태에서는 항상 좋아요 안 된 상태로 표시
+    }
+    return isLiked;
+  };
+
+  const renderScrapStatus = () => {
+    if (!isSignedIn) {
+      return false; // 로그인되지 않은 상태에서는 항상 스크랩 안 된 상태로 표시
+    }
+    return isScrapped;
+  };
+
   return (
     <>
       <Link href={`/post/${postId}`}>
-        <Card className="overflow-hidden transition-all duration-200 hover:shadow-md hover:scale-[1.02]">
+        <Card className="overflow-hidden transition-all duration-200 hover:shadow-md hover:scale-[1.02]" onClick={handleCardClick}>
           <div className="relative aspect-square w-full bg-gray-100 flex items-center justify-center">
             {!imageLoaded && !imageError && (
               <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
@@ -145,32 +187,32 @@ export default function CommunityFeedCard({ post: initialPost }: ICommunityFeedC
           <CardFooter className="p-3 pt-0 flex justify-between">
             <div className="flex items-center gap-4 text-sm">
               <button 
-                className="flex items-center gap-1 hover:text-[#4A90E2] transition-colors"
+                className={`flex items-center gap-1 ${isSignedIn ? 'hover:text-[#4A90E2]' : 'cursor-pointer'} transition-colors`}
                 onClick={handleLikeToggle}
                 disabled={isLikeLoading}
               >
                 <Heart 
-                  className={`h-4 w-4 ${isLiked ? 'fill-red-500 text-red-500' : 'text-gray-500'} 
-                             ${isLikeLoading ? 'opacity-50' : 'hover:scale-110 transition-transform'}`} 
+                  className={`h-4 w-4 ${renderLikeStatus() ? 'fill-red-500 text-red-500' : 'text-gray-500'} 
+                             ${isLikeLoading ? 'opacity-50' : isSignedIn ? 'hover:scale-110 transition-transform' : ''}`} 
                 />
                 <span>{likes}</span>
               </button>
               <button 
-                className="flex items-center gap-1 hover:text-[#4A90E2] transition-colors"
+                className={`flex items-center gap-1 ${isSignedIn ? 'hover:text-[#4A90E2]' : 'cursor-pointer'} transition-colors`}
                 onClick={handleOpenCommentModal}
               >
-                <MessageCircle className="h-4 w-4 text-gray-500 hover:scale-110 transition-transform" />
+                <MessageCircle className={`h-4 w-4 text-gray-500 ${isSignedIn ? 'hover:scale-110 transition-transform' : ''}`} />
                 <span>{comments}</span>
               </button>
             </div>
             <button 
-              className="flex items-center hover:text-[#4A90E2] transition-colors"
+              className={`flex items-center ${isSignedIn ? 'hover:text-[#4A90E2]' : 'cursor-pointer'} transition-colors`}
               onClick={handleScrapToggle}
               disabled={isScrapLoading}
             >
               <Bookmark 
-                className={`h-4 w-4 ${isScrapped ? 'fill-blue-500 text-blue-500' : 'text-gray-500'}
-                           ${isScrapLoading ? 'opacity-50' : 'hover:scale-110 transition-transform'}`} 
+                className={`h-4 w-4 ${renderScrapStatus() ? 'fill-blue-500 text-blue-500' : 'text-gray-500'}
+                           ${isScrapLoading ? 'opacity-50' : isSignedIn ? 'hover:scale-110 transition-transform' : ''}`} 
               />
               <span className="ml-1 text-sm">{scraps}</span>
             </button>

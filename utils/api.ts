@@ -76,6 +76,7 @@ export async function fetchPostComments(postId: string): Promise<{ success: bool
 export async function generateImage(prompt: string, style?: IImageStyle): Promise<{ success: boolean, imageURL: string, error?: { message: string } }> {
   // 기본 스타일 값 설정
   const defaultStyle: IImageStyle = {
+    styleType: 'general',
     color: 'bright',
     texture: 'smooth',
     mood: 'warm',
@@ -185,6 +186,7 @@ export async function saveToGallery(
 ): Promise<{ success: boolean, imageId: string }> {
   // 기본 스타일 값 설정
   const defaultStyle: IImageStyle = {
+    styleType: 'general',
     color: 'bright',
     texture: 'smooth',
     mood: 'warm',

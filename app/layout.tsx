@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/layout/Header";
 import { Toaster } from "@/components/ui/toaster";
+import { ClerkProvider } from '@clerk/nextjs';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -17,12 +18,19 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ko">
-      <body className={inter.className}>
-        <Header />
-        <main className="pt-16 min-h-screen bg-gray-50">{children}</main>
-        <Toaster />
-      </body>
-    </html>
+    <ClerkProvider appearance={{
+      elements: {
+        rootBox: 'w-full h-full',
+        card: 'shadow-none',
+      }
+    }}>
+      <html lang="ko">
+        <body className={inter.className}>
+          <Header />
+          <main className="pt-16 min-h-screen bg-gray-50">{children}</main>
+          <Toaster />
+        </body>
+      </html>
+    </ClerkProvider>
   );
 }

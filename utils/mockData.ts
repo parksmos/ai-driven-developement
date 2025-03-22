@@ -153,6 +153,7 @@ export const mockGalleryImages: IGalleryImage[] = [
     name: "산 정상에서 바라본 일출",
     prompt: "산 정상에서 바라본 일출 장면",
     style: {
+      styleType: 'general',
       color: "비비드",
       texture: "부드러운",
       mood: "평화로운",
@@ -169,6 +170,7 @@ export const mockGalleryImages: IGalleryImage[] = [
     name: "미래 도시의 스카이라인",
     prompt: "미래 도시의 스카이라인",
     style: {
+      styleType: 'general',
       color: "네온",
       texture: "금속",
       mood: "미래적",
@@ -185,6 +187,7 @@ export const mockGalleryImages: IGalleryImage[] = [
     name: "르네상스 스타일 초상화",
     prompt: "르네상스 스타일의 여성 초상화",
     style: {
+      styleType: 'general',
       color: "클래식",
       texture: "캔버스",
       mood: "우아한",
@@ -198,16 +201,17 @@ export const mockGalleryImages: IGalleryImage[] = [
     id: "gal4",
     imageURL: "https://images.unsplash.com/photo-1535291911176-70ee2c5c9494?w=600&h=600&fit=crop",
     thumbnailURL: "https://images.unsplash.com/photo-1535291911176-70ee2c5c9494?w=300&h=300&fit=crop",
-    name: "신비로운 숲 속의 마법사",
-    prompt: "신비로운 숲 속의 마법사",
+    name: "브랜드 로고 디자인",
+    prompt: "미니멀한 스타일의 브랜드 로고 디자인",
     style: {
-      color: "판타지",
-      texture: "마법",
-      mood: "신비로운",
-      intensity: 85
+      styleType: 'logo',
+      color: "minimal",
+      texture: "flat",
+      mood: "professional",
+      intensity: 70
     },
     createdAt: getRandomDate(),
-    tags: ["판타지", "마법사", "숲", "마법"],
+    tags: ["로고", "브랜드", "디자인", "미니멀"],
     categories: ["cat4"]
   },
   {
@@ -217,6 +221,7 @@ export const mockGalleryImages: IGalleryImage[] = [
     name: "바다 위의 일몰",
     prompt: "바다 위의 일몰",
     style: {
+      styleType: 'general',
       color: "따뜻한",
       texture: "반짝이는",
       mood: "평화로운",
@@ -233,6 +238,7 @@ export const mockGalleryImages: IGalleryImage[] = [
     name: "추상적인 형태와 색상",
     prompt: "추상적인 형태와 색상의 조합",
     style: {
+      styleType: 'general',
       color: "다채로운",
       texture: "혼합",
       mood: "열정적인",
@@ -249,6 +255,7 @@ export const mockGalleryImages: IGalleryImage[] = [
     name: "안개 속의 산봉우리",
     prompt: "안개 속의 산봉우리",
     style: {
+      styleType: 'general',
       color: "몽환적",
       texture: "부드러운",
       mood: "신비로운",
@@ -265,6 +272,7 @@ export const mockGalleryImages: IGalleryImage[] = [
     name: "별이 빛나는 밤하늘",
     prompt: "맑은 별이 빛나는 밤하늘",
     style: {
+      styleType: 'general',
       color: "어두운",
       texture: "반짝이는",
       mood: "평화로운",
@@ -281,6 +289,7 @@ export const mockGalleryImages: IGalleryImage[] = [
     name: "봄의 꽃들",
     prompt: "다양한 색상의 꽃이 만개한 봄 정원",
     style: {
+      styleType: 'general',
       color: "파스텔",
       texture: "부드러운",
       mood: "행복한",
@@ -297,6 +306,7 @@ export const mockGalleryImages: IGalleryImage[] = [
     name: "젊은 남성의 초상화",
     prompt: "스튜디오에서 촬영한 젊은 남성의 초상화",
     style: {
+      styleType: 'general',
       color: "대비가 강한",
       texture: "선명한",
       mood: "진지한",
@@ -313,6 +323,7 @@ export const mockGalleryImages: IGalleryImage[] = [
     name: "파스텔 색상의 추상화",
     prompt: "부드러운 파스텔 색상으로 이루어진 추상적인 패턴",
     style: {
+      styleType: 'general',
       color: "파스텔",
       texture: "유동적인",
       mood: "평화로운",
@@ -329,6 +340,7 @@ export const mockGalleryImages: IGalleryImage[] = [
     name: "디지털 사이버펑크 도시",
     prompt: "네온불빛이 가득한 미래의 사이버펑크 도시",
     style: {
+      styleType: 'general',
       color: "네온",
       texture: "디지털",
       mood: "미래적",
@@ -345,6 +357,7 @@ export const mockGalleryImages: IGalleryImage[] = [
     name: "아시아 여성의 초상화",
     prompt: "전통적인 의상을 입은 아시아 여성의 초상화",
     style: {
+      styleType: 'general',
       color: "풍부한",
       texture: "섬세한",
       mood: "우아한",
@@ -361,6 +374,7 @@ export const mockGalleryImages: IGalleryImage[] = [
     name: "용과 기사의 전투",
     prompt: "화려한 갑옷을 입은 기사와 화염을 내뿜는 용의 전투 장면",
     style: {
+      styleType: 'general',
       color: "강렬한",
       texture: "거친",
       mood: "극적인",
@@ -377,6 +391,7 @@ export const mockGalleryImages: IGalleryImage[] = [
     name: "새롭게 생성된 이미지",
     prompt: "새롭게 생성된 이미지 프롬프트",
     style: {
+      styleType: 'general',
       color: "기본",
       texture: "기본",
       mood: "중립",
@@ -386,6 +401,40 @@ export const mockGalleryImages: IGalleryImage[] = [
     tags: [],
     categories: ["uncategorized"]
   }
+];
+
+// 스타일 타입 옵션
+export const styleTypeOptions: ISelectOption[] = [
+  { value: 'general', label: '일반' },
+  { value: 'logo', label: '로고' },
+  { value: 'illustration', label: '일러스트레이션' },
+];
+
+// 로고 색감 옵션
+export const logoColorOptions: ISelectOption[] = [
+  { value: 'corporate', label: '기업용' },
+  { value: 'vibrant', label: '활기찬' },
+  { value: 'minimal', label: '미니멀' },
+  { value: 'gradient', label: '그라데이션' },
+  { value: 'bold', label: '대담한' },
+];
+
+// 로고 텍스처 옵션
+export const logoTextureOptions: ISelectOption[] = [
+  { value: 'flat', label: '플랫' },
+  { value: '3d', label: '3D' },
+  { value: 'metallic', label: '메탈릭' },
+  { value: 'shadow', label: '그림자' },
+  { value: 'embossed', label: '엠보싱' },
+];
+
+// 로고 분위기 옵션
+export const logoMoodOptions: ISelectOption[] = [
+  { value: 'professional', label: '전문적인' },
+  { value: 'creative', label: '창의적인' },
+  { value: 'playful', label: '유쾌한' },
+  { value: 'luxury', label: '고급스러운' },
+  { value: 'tech', label: '테크니컬' },
 ];
 
 // 색감 옵션

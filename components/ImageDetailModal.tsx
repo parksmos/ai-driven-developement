@@ -210,6 +210,11 @@ const ImageDetailModal = ({
               </h3>
               <div className="grid grid-cols-2 gap-2 text-sm">
                 <div>
+                  <span className="text-gray-500">타입: </span>
+                  {image.style.styleType === 'logo' ? '로고' : 
+                   image.style.styleType === 'illustration' ? '일러스트레이션' : '일반'}
+                </div>
+                <div>
                   <span className="text-gray-500">색감: </span>
                   {image.style.color}
                 </div>

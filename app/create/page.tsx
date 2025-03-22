@@ -18,14 +18,25 @@ import {
 } from '@/types';
 import { generateImage, saveToGallery, handleShareToCommuity } from '@/utils/api';
 import { downloadImage } from '@/utils/downloadImage';
-import { colorOptions, textureOptions, moodOptions } from '@/utils/mockData';
+import { useUser } from '@clerk/nextjs';
+import { 
+  colorOptions, 
+  textureOptions, 
+  moodOptions, 
+  styleTypeOptions,
+  logoColorOptions,
+  logoTextureOptions,
+  logoMoodOptions
+} from '@/utils/mockData';
 
 export default function CreatePage() {
   const searchParams = useSearchParams();
+  const { user } = useUser();
   
   // 상태 관리
   const [prompt, setPrompt] = useState('');
   const [style, setStyle] = useState<IImageStyle>({
+    styleType: 'general',
     color: 'bright',
     texture: 'smooth',
     mood: 'warm',
@@ -52,7 +63,18 @@ export default function CreatePage() {
         setPromptError('');
       }
     }
-  }, [searchParams]);
+    
+    // 로그인한 사용자 정보 확인
+    if (user) {
+      console.log(`인증된 사용자: ${user.firstName} ${user.lastName || ''} (${user.primaryEmailAddress?.emailAddress})`);
+      
+      // 사용자 정보를 활용하여 추가 기능을 구현할 수 있습니다.
+      toast({
+        description: `${user.firstName || '사용자'}님, 멋진 이미지를 생성해보세요!`,
+        duration: 3000,
+      });
+    }
+  }, [searchParams, user]);
 
   // 프롬프트 입력 처리
   const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -81,6 +103,28 @@ export default function CreatePage() {
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     handleStyleChange('intensity', parseInt(e.target.value));
   };
+
+  // 스타일 타입에 따른 옵션 가져오기
+  const getStyleOptions = (type: string) => {
+    switch (type) {
+      case 'logo':
+        return {
+          colorOpts: logoColorOptions,
+          textureOpts: logoTextureOptions,
+          moodOpts: logoMoodOptions
+        };
+      case 'general':
+      default:
+        return {
+          colorOpts: colorOptions,
+          textureOpts: textureOptions,
+          moodOpts: moodOptions
+        };
+    }
+  };
+
+  // 현재 스타일 타입에 따른 옵션 가져오기
+  const currentStyleOptions = getStyleOptions(style.styleType);
 
   // 이미지 생성 처리
   const handleGenerateImage = async () => {
@@ -276,6 +320,24 @@ export default function CreatePage() {
             
             <div className="space-y-4">
               <div>
+                <Label htmlFor="style-type-select" className="text-sm font-medium mb-1 block">
+                  스타일 타입
+                </Label>
+                <select
+                  id="style-type-select"
+                  value={style.styleType}
+                  onChange={(e) => handleSelectChange(e, 'styleType')}
+                  className="w-full flex h-9 rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs focus:outline-none focus:ring-2 focus:ring-ring"
+                >
+                  {styleTypeOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <div>
                 <Label htmlFor="color-select" className="text-sm font-medium mb-1 block">
                   색감
                 </Label>
@@ -285,7 +347,7 @@ export default function CreatePage() {
                   onChange={(e) => handleSelectChange(e, 'color')}
                   className="w-full flex h-9 rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs focus:outline-none focus:ring-2 focus:ring-ring"
                 >
-                  {colorOptions.map((option) => (
+                  {currentStyleOptions.colorOpts.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
@@ -303,7 +365,7 @@ export default function CreatePage() {
                   onChange={(e) => handleSelectChange(e, 'texture')}
                   className="w-full flex h-9 rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs focus:outline-none focus:ring-2 focus:ring-ring"
                 >
-                  {textureOptions.map((option) => (
+                  {currentStyleOptions.textureOpts.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
@@ -321,7 +383,7 @@ export default function CreatePage() {
                   onChange={(e) => handleSelectChange(e, 'mood')}
                   className="w-full flex h-9 rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs focus:outline-none focus:ring-2 focus:ring-ring"
                 >
-                  {moodOptions.map((option) => (
+                  {currentStyleOptions.moodOpts.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
